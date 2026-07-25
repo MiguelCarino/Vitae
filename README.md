@@ -1,4 +1,4 @@
-# Simple Resume
+# Vitae
 
 Fill a form, get a clean resume you can print or export to PDF — runs entirely client-side.
 
