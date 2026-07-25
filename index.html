@@ -20,7 +20,7 @@
             --module-gap: 0px; /* Forced Minimum */
             --item-gap: 0px;   /* Forced Minimum */
         }
-        body { background-color: #0f172a; color: #e2e8f0; font-family: 'IBM Plex Sans', sans-serif; overflow-x: hidden; }
+        body { background-color: #050505; color: #fff; font-family: 'IBM Plex Sans', sans-serif; overflow-x: hidden; }
         
         /* PAGE DIMENSIONS */
         .page-container {
@@ -84,7 +84,7 @@
         /* Editable Areas */
         .editable { min-width: 10px; display: inline-block; }
         .editable:empty:before { content: attr(placeholder); opacity: 0.3; }
-        .editable:focus { outline: none; background: rgba(0,165,233,0.1); border-radius: 2px; }
+        .editable:focus { outline: none; background: rgba(234,179,8,.15); border-radius: 2px; }
         
         /* Control Menu Bridge */
         .menu-bridge { position: absolute; bottom: -10px; left: 0; width: 100%; height: 10px; }
@@ -97,11 +97,11 @@
             left: 4.5rem; 
             bottom: 1.5rem;
             width: 250px;
-            background: #1e293b;
-            color: #e2e8f0;
+            background: #0d0d0d;
+            color: #a3a3a3;
             padding: 1rem;
             border-radius: 0.5rem;
-            border: 1px solid #334155;
+            border: 1px solid #262626;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             transition: opacity 0.2s;
             z-index: 100;
@@ -115,6 +115,26 @@
         .color-btn { width: 100%; height: 18px; border-radius: 4px; transition: transform 0.1s; border: 1px solid rgba(255,255,255,0.1); }
         .color-btn:hover { transform: scale(1.1); z-index: 10; border-color: white; }
         .color-btn.active { border: 2px solid white; }
+
+        /* Carino brand palette for the EDITOR chrome only — the resume
+           document keeps its own user-picked colors. Loaded after
+           tailwind.css so these win over same-specificity utilities. */
+        .ui-accent { color: #eab308; }
+        .ui-sec { color: #a3a3a3; }
+        .ui-muted { color: #666; }
+        .ui-border { border-color: #262626; }
+        .bg-accent { background-color: #eab308; }
+        .ui-input { background: #0d0d0d; border-color: #262626; }
+        .ui-panel { background: #0d0d0d; border-color: #262626; }
+        .ui-range { accent-color: #eab308; background: #262626; }
+        .ui-hover:hover { background: #262626; }
+        .ui-link:hover { color: #eab308; }
+        .ui-tool { background: #0d0d0d; border-color: #262626; color: #a3a3a3; }
+        .ui-tool:hover, .ui-tool.active { background: #eab308; border-color: #eab308; color: #050505; }
+        .ui-dashed { border-color: #262626; color: #666; }
+        .ui-dashed:hover { border-color: #eab308; color: #fff; }
+        .btn-primary { background: #eab308; color: #050505; }
+        .btn-primary:hover { background: #fbbf24; }
 
         /* Carino navbar merge: one sticky top bar (the injected #carinoNav), the
            resume controls are portaled into it. Body is a flex column so the nav

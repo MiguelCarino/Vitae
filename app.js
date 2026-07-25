@@ -448,30 +448,30 @@ const SectionControl = ({
 }) => /*#__PURE__*/React.createElement("div", {
   className: "absolute -top-7 right-0 flex items-center opacity-0 group-hover:opacity-100 transition duration-150 z-20 no-print"
 }, /*#__PURE__*/React.createElement("div", {
-  className: "flex bg-slate-900 text-white rounded shadow-lg overflow-hidden border border-slate-700 text-xs"
+  className: "flex ui-panel text-white rounded shadow-lg overflow-hidden border text-xs"
 }, /*#__PURE__*/React.createElement("div", {
-  className: "flex border-r border-slate-700"
+  className: "flex border-r ui-border"
 }, /*#__PURE__*/React.createElement("button", {
   onClick: () => onMove(-1),
-  className: "p-1.5 hover:bg-slate-700",
+  className: "p-1.5 ui-hover",
   title: "Move Up"
 }, /*#__PURE__*/React.createElement(Icons.MoveUp, null)), /*#__PURE__*/React.createElement("button", {
   onClick: () => onMove(1),
-  className: "p-1.5 hover:bg-slate-700",
+  className: "p-1.5 ui-hover",
   title: "Move Down"
 }, /*#__PURE__*/React.createElement(Icons.MoveDown, null))), /*#__PURE__*/React.createElement("div", {
-  className: "flex border-r border-slate-700"
+  className: "flex border-r ui-border"
 }, /*#__PURE__*/React.createElement("button", {
   onClick: () => onColChange('col-full'),
-  className: `p-1.5 hover:bg-slate-700 ${currentCol === 'col-full' ? 'text-sky-400' : 'opacity-70'}`,
+  className: `p-1.5 ui-hover ${currentCol === 'col-full' ? 'ui-accent' : 'opacity-70'}`,
   title: "Full Width"
 }, /*#__PURE__*/React.createElement(Icons.LayoutFull, null)), /*#__PURE__*/React.createElement("button", {
   onClick: () => onColChange('col-left'),
-  className: `p-1.5 hover:bg-slate-700 ${currentCol === 'col-left' ? 'text-sky-400' : 'opacity-70'}`,
+  className: `p-1.5 ui-hover ${currentCol === 'col-left' ? 'ui-accent' : 'opacity-70'}`,
   title: "Left Sidebar"
 }, /*#__PURE__*/React.createElement(Icons.LayoutLeft, null)), /*#__PURE__*/React.createElement("button", {
   onClick: () => onColChange('col-right'),
-  className: `p-1.5 hover:bg-slate-700 ${currentCol === 'col-right' ? 'text-sky-400' : 'opacity-70'}`,
+  className: `p-1.5 ui-hover ${currentCol === 'col-right' ? 'ui-accent' : 'opacity-70'}`,
   title: "Right Main"
 }, /*#__PURE__*/React.createElement(Icons.LayoutRight, null))), /*#__PURE__*/React.createElement("button", {
   onClick: onDelete,
@@ -785,7 +785,7 @@ function App() {
       ...config,
       paperSize: e.target.value
     }),
-    className: "bg-slate-800 text-xs text-slate-300 p-1.5 rounded border border-slate-700 font-mono uppercase"
+    className: "ui-input ui-sec text-xs p-1.5 rounded border font-mono uppercase"
   }, /*#__PURE__*/React.createElement("option", {
     value: "a4"
   }, "A4"), /*#__PURE__*/React.createElement("option", {
@@ -793,7 +793,7 @@ function App() {
   }, "Letter"), /*#__PURE__*/React.createElement("option", {
     value: "legal"
   }, "Legal")), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-4 border-l border-slate-700 pl-3"
+    className: "flex items-center gap-4 border-l ui-border pl-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "color-grid w-32"
   }, ACCENT_COLORS.map(c => /*#__PURE__*/React.createElement("button", {
@@ -807,7 +807,7 @@ function App() {
       background: c
     }
   }))), /*#__PURE__*/React.createElement("label", {
-    className: "flex flex-col text-[9px] uppercase font-bold text-slate-500 group"
+    className: "flex flex-col text-[9px] uppercase font-bold ui-muted group"
   }, "Size", /*#__PURE__*/React.createElement("input", {
     type: "number",
     value: config.size,
@@ -815,9 +815,9 @@ function App() {
       ...config,
       size: e.target.value
     }),
-    className: "w-12 bg-slate-800 text-white rounded px-1 border border-slate-700 mt-1"
+    className: "w-12 ui-input text-white rounded px-1 border mt-1"
   })), /*#__PURE__*/React.createElement("label", {
-    className: "flex flex-col text-[9px] uppercase font-bold text-slate-500 group"
+    className: "flex flex-col text-[9px] uppercase font-bold ui-muted group"
   }, "Margin", /*#__PURE__*/React.createElement("input", {
     type: "range",
     min: "10",
@@ -827,14 +827,14 @@ function App() {
       ...config,
       margin: e.target.value
     }),
-    className: "w-16 accent-sky-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer mt-1"
+    className: "w-16 ui-range h-1.5 rounded-lg appearance-none cursor-pointer mt-1"
   }))), /*#__PURE__*/React.createElement("select", {
     value: config.font,
     onChange: e => setConfig({
       ...config,
       font: e.target.value
     }),
-    className: "bg-slate-800 text-xs text-white p-2 rounded font-bold border border-slate-700"
+    className: "ui-input text-xs text-white p-2 rounded font-bold border"
   }, /*#__PURE__*/React.createElement("option", {
     value: "IBM Plex Sans"
   }, "IBM Plex"), /*#__PURE__*/React.createElement("option", {
@@ -848,14 +848,14 @@ function App() {
       ...config,
       darkModeResume: !config.darkModeResume
     }),
-    className: "text-slate-400 hover:text-white px-2"
+    className: "ui-sec hover:text-white px-2"
   }, config.darkModeResume ? '☀' : '☾'), /*#__PURE__*/React.createElement("button", {
     onClick: () => window.print(),
-    className: "bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded text-xs font-bold shadow-lg"
+    className: "btn-primary px-3 py-1.5 rounded text-xs font-bold shadow-lg"
   }, "Print PDF")), /*#__PURE__*/React.createElement("div", {
-    className: "fixed right-0 top-[60px] bottom-0 w-16 bg-slate-900 border-l border-slate-800 z-40 flex flex-col items-center py-4 gap-4 no-print overflow-y-auto"
+    className: "fixed right-0 top-[60px] bottom-0 w-16 ui-panel border-l z-40 flex flex-col items-center py-4 gap-4 no-print overflow-y-auto"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1"
+    className: "text-[9px] font-bold ui-muted uppercase tracking-widest mb-1"
   }, "Add"), [{
     id: 'header',
     label: 'Head',
@@ -895,31 +895,31 @@ function App() {
   }].map(tool => /*#__PURE__*/React.createElement("button", {
     key: tool.id,
     onClick: () => addSection(tool.id),
-    className: "group w-10 h-10 shrink-0 rounded bg-slate-800 hover:bg-sky-600 text-slate-300 hover:text-white flex items-center justify-center transition shadow-sm border border-slate-700 hover:border-sky-400 relative",
+    className: "group w-10 h-10 shrink-0 rounded ui-tool flex items-center justify-center transition shadow-sm border relative",
     title: tool.label
   }, /*#__PURE__*/React.createElement(tool.icon, null))), /*#__PURE__*/React.createElement("div", {
     className: "mt-auto mb-4 group relative cursor-pointer",
     onClick: () => setShowInfo(!showInfo)
   }, /*#__PURE__*/React.createElement("div", {
-    className: `w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:bg-sky-900 hover:text-white transition ${showInfo ? 'bg-sky-600 text-white ring-2 ring-sky-300' : ''}`
+    className: `w-8 h-8 rounded-full ui-tool flex items-center justify-center transition ${showInfo ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement(Icons.InfoOutline, null)), /*#__PURE__*/React.createElement("div", {
     className: `sidebar-tooltip ${showInfo ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    className: "font-bold mb-1 text-sky-400"
+    className: "font-bold mb-1 ui-accent"
   }, "Privacy & License"), /*#__PURE__*/React.createElement("div", {
-    className: "mb-2 text-slate-300"
+    className: "mb-2"
   }, "Your data is stored ", /*#__PURE__*/React.createElement("strong", null, "locally in the URL hash"), ". It is never sent to any server. You own your data and the generated PDF."), /*#__PURE__*/React.createElement("div", {
-    className: "flex gap-3 text-xs pt-2 border-t border-slate-700"
+    className: "flex gap-3 text-xs pt-2 border-t ui-border"
   }, /*#__PURE__*/React.createElement("a", {
     href: "https://github.com",
     target: "_blank",
-    className: "text-white hover:text-sky-400"
+    className: "text-white ui-link"
   }, "GitHub"), /*#__PURE__*/React.createElement("a", {
     href: "https://linkedin.com",
     target: "_blank",
-    className: "text-white hover:text-sky-400"
+    className: "text-white ui-link"
   }, "LinkedIn"))))), /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 min-h-0 pt-8 pb-20 pr-16 flex flex-col items-center gap-8 overflow-y-auto bg-slate-900/50 print:p-0 print:m-0 print:overflow-visible print:bg-white",
+    className: "flex-1 min-h-0 pt-8 pb-20 pr-16 flex flex-col items-center gap-8 overflow-y-auto print:p-0 print:m-0 print:overflow-visible print:bg-white",
     style: {
       '--accent': config.accent,
       fontFamily: config.font,
@@ -933,7 +933,7 @@ function App() {
     className: "relative group/page",
     onClick: () => setActivePage(pIdx)
   }, /*#__PURE__*/React.createElement("div", {
-    className: `absolute -left-4 top-0 h-full w-1 transition-colors ${activePage === pIdx ? 'bg-sky-500' : 'bg-transparent'}`
+    className: `absolute -left-4 top-0 h-full w-1 transition-colors ${activePage === pIdx ? 'bg-accent' : 'bg-transparent'}`
   }), /*#__PURE__*/React.createElement("div", {
     className: `page-container size-${config.paperSize} transition-colors duration-300 ${config.darkModeResume ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`
   }, /*#__PURE__*/React.createElement("button", {
@@ -1227,7 +1227,7 @@ function App() {
       id: Date.now(),
       sections: []
     }]),
-    className: "no-print mt-4 px-6 py-3 rounded border-2 border-dashed border-slate-700 text-slate-500 font-bold hover:text-white hover:border-slate-500"
+    className: "no-print mt-4 px-6 py-3 rounded border-2 border-dashed ui-dashed font-bold"
   }, "Add Page"), "                    "), "                ");
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
