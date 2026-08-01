@@ -4,6 +4,11 @@ const {
   useRef
 } = React;
 
+// i18n: resolve the fleet translator lazily — this script executes before the
+// deferred i18n.js, so window.t may not exist yet; fall back to the English
+// literal (which is also the dictionary key).
+const tr = key => typeof window.t === 'function' ? window.t(key) : key;
+
 // --- ICONS ---
 const Icons = {
   Trash: () => /*#__PURE__*/React.createElement("svg", {
@@ -454,29 +459,29 @@ const SectionControl = ({
 }, /*#__PURE__*/React.createElement("button", {
   onClick: () => onMove(-1),
   className: "p-1.5 ui-hover",
-  title: "Move Up"
+  title: tr("Move Up")
 }, /*#__PURE__*/React.createElement(Icons.MoveUp, null)), /*#__PURE__*/React.createElement("button", {
   onClick: () => onMove(1),
   className: "p-1.5 ui-hover",
-  title: "Move Down"
+  title: tr("Move Down")
 }, /*#__PURE__*/React.createElement(Icons.MoveDown, null))), /*#__PURE__*/React.createElement("div", {
   className: "flex border-r ui-border"
 }, /*#__PURE__*/React.createElement("button", {
   onClick: () => onColChange('col-full'),
   className: `p-1.5 ui-hover ${currentCol === 'col-full' ? 'ui-accent' : 'opacity-70'}`,
-  title: "Full Width"
+  title: tr("Full Width")
 }, /*#__PURE__*/React.createElement(Icons.LayoutFull, null)), /*#__PURE__*/React.createElement("button", {
   onClick: () => onColChange('col-left'),
   className: `p-1.5 ui-hover ${currentCol === 'col-left' ? 'ui-accent' : 'opacity-70'}`,
-  title: "Left Sidebar"
+  title: tr("Left Sidebar")
 }, /*#__PURE__*/React.createElement(Icons.LayoutLeft, null)), /*#__PURE__*/React.createElement("button", {
   onClick: () => onColChange('col-right'),
   className: `p-1.5 ui-hover ${currentCol === 'col-right' ? 'ui-accent' : 'opacity-70'}`,
-  title: "Right Main"
+  title: tr("Right Main")
 }, /*#__PURE__*/React.createElement(Icons.LayoutRight, null))), /*#__PURE__*/React.createElement("button", {
   onClick: onDelete,
   className: "p-1.5 hover:bg-red-600 hover:text-white text-red-300",
-  title: "Delete Section"
+  title: tr("Delete Section")
 }, /*#__PURE__*/React.createElement(Icons.Trash, null))), /*#__PURE__*/React.createElement("div", {
   className: "menu-bridge"
 }));
@@ -530,6 +535,22 @@ function App() {
   const [activePage, setActivePage] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const saveTimeoutRef = useRef(null);
+  // i18n: re-render the chrome once the deferred i18n.js has loaded and on
+  // every fleet language switch. Document data is never touched.
+  const [, setLangTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setLangTick(n => n + 1);
+    window.addEventListener('carino:langchange', bump);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bump);
+    } else {
+      bump();
+    }
+    return () => {
+      window.removeEventListener('carino:langchange', bump);
+      document.removeEventListener('DOMContentLoaded', bump);
+    };
+  }, []);
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `@media print { @page { size: ${config.paperSize}; margin: 0; } }`;
@@ -808,7 +829,7 @@ function App() {
     }
   }))), /*#__PURE__*/React.createElement("label", {
     className: "flex flex-col text-[9px] uppercase font-bold ui-muted group"
-  }, "Size", /*#__PURE__*/React.createElement("input", {
+  }, tr("Size"), /*#__PURE__*/React.createElement("input", {
     type: "number",
     value: config.size,
     onChange: e => setConfig({
@@ -818,7 +839,7 @@ function App() {
     className: "w-12 ui-input text-white rounded px-1 border mt-1"
   })), /*#__PURE__*/React.createElement("label", {
     className: "flex flex-col text-[9px] uppercase font-bold ui-muted group"
-  }, "Margin", /*#__PURE__*/React.createElement("input", {
+  }, tr("Margin"), /*#__PURE__*/React.createElement("input", {
     type: "range",
     min: "10",
     max: "60",
@@ -852,11 +873,11 @@ function App() {
   }, config.darkModeResume ? '☀' : '☾'), /*#__PURE__*/React.createElement("button", {
     onClick: () => window.print(),
     className: "btn-primary px-3 py-1.5 rounded text-xs font-bold shadow-lg"
-  }, "Print PDF")), /*#__PURE__*/React.createElement("div", {
+  }, tr("Print PDF"))), /*#__PURE__*/React.createElement("div", {
     className: "fixed right-0 top-[60px] bottom-0 w-16 ui-panel border-l z-40 flex flex-col items-center py-4 gap-4 no-print overflow-y-auto"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[9px] font-bold ui-muted uppercase tracking-widest mb-1"
-  }, "Add"), [{
+  }, tr("Add")), [{
     id: 'header',
     label: 'Head',
     icon: Icons.ModHeader
@@ -896,7 +917,7 @@ function App() {
     key: tool.id,
     onClick: () => addSection(tool.id),
     className: "group w-10 h-10 shrink-0 rounded ui-tool flex items-center justify-center transition shadow-sm border relative",
-    title: tool.label
+    title: tr(tool.label)
   }, /*#__PURE__*/React.createElement(tool.icon, null))), /*#__PURE__*/React.createElement("div", {
     className: "mt-auto mb-4 group relative cursor-pointer",
     onClick: () => setShowInfo(!showInfo)
@@ -906,9 +927,9 @@ function App() {
     className: `sidebar-tooltip ${showInfo ? 'active' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "font-bold mb-1 ui-accent"
-  }, "Privacy & License"), /*#__PURE__*/React.createElement("div", {
+  }, tr("Privacy & License")), /*#__PURE__*/React.createElement("div", {
     className: "mb-2"
-  }, "Your data is stored ", /*#__PURE__*/React.createElement("strong", null, "locally in the URL hash"), ". It is never sent to any server. You own your data and the generated PDF."), /*#__PURE__*/React.createElement("div", {
+  }, tr("Your data is stored "), /*#__PURE__*/React.createElement("strong", null, tr("locally in the URL hash")), tr(". It is never sent to any server. You own your data and the generated PDF.")), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-3 text-xs pt-2 border-t ui-border"
   }, /*#__PURE__*/React.createElement("a", {
     href: "https://github.com",
@@ -969,7 +990,7 @@ function App() {
       ...sec.data,
       name: v
     }),
-    placeholder: "Name"
+    placeholder: tr("Name")
   })), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/React.createElement("div", {
@@ -980,14 +1001,14 @@ function App() {
       ...sec.data,
       title: v
     }),
-    placeholder: "Job Title"
+    placeholder: tr("Job Title")
   })), /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSection(pIdx, sIdx, 'data', {
       ...sec.data,
       border: !sec.data.border
     }),
     className: "no-print opacity-0 group-hover/header:opacity-100 text-[10px] bg-slate-200 px-1 rounded text-slate-500 hover:text-black",
-    title: "Toggle Line"
+    title: tr("Toggle Line")
   }, "=")), sec.data.border !== false && /*#__PURE__*/React.createElement("hr", {
     className: "mt-2 border-t-2",
     style: {
@@ -1081,7 +1102,7 @@ function App() {
       ni[i].title = v;
       updateSection(pIdx, sIdx, 'items', ni);
     },
-    placeholder: "Role"
+    placeholder: tr("Role")
   })), /*#__PURE__*/React.createElement("div", {
     className: "text-[0.85em] opacity-60 font-mono"
   }, /*#__PURE__*/React.createElement(Editable, {
@@ -1091,7 +1112,7 @@ function App() {
       ni[i].subtitle = v;
       updateSection(pIdx, sIdx, 'items', ni);
     },
-    placeholder: "Date"
+    placeholder: tr("Date")
   }))), /*#__PURE__*/React.createElement("div", {
     className: "text-[0.9em] opacity-80 leading-relaxed"
   }, /*#__PURE__*/React.createElement(Editable, {
@@ -1102,7 +1123,7 @@ function App() {
       updateSection(pIdx, sIdx, 'items', ni);
     },
     multiline: true,
-    placeholder: "Details..."
+    placeholder: tr("Details...")
   })), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const ni = [...sec.items];
@@ -1117,7 +1138,7 @@ function App() {
       desc: 'Desc'
     }]),
     className: "text-[10px] font-bold opacity-30 hover:opacity-100 uppercase mt-1 no-print self-start"
-  }, "+ Item")), sec.type === 'languages' && /*#__PURE__*/React.createElement("div", {
+  }, tr("+ Item"))), sec.type === 'languages' && /*#__PURE__*/React.createElement("div", {
     className: "dynamic-gap flex flex-col"
   }, sec.items.map((item, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
@@ -1134,7 +1155,7 @@ function App() {
       ni[i].title = v;
       updateSection(pIdx, sIdx, 'items', ni);
     },
-    placeholder: "Language"
+    placeholder: tr("Language")
   })), /*#__PURE__*/React.createElement("div", {
     className: "text-[0.85em] opacity-70 italic"
   }, /*#__PURE__*/React.createElement(Editable, {
@@ -1144,7 +1165,7 @@ function App() {
       ni[i].subtitle = v;
       updateSection(pIdx, sIdx, 'items', ni);
     },
-    placeholder: "Level"
+    placeholder: tr("Level")
   })), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       const ni = [...sec.items];
@@ -1158,7 +1179,7 @@ function App() {
       subtitle: 'Level'
     }]),
     className: "text-[10px] font-bold opacity-30 hover:opacity-100 uppercase mt-1 no-print self-start"
-  }, "+ Language")), sec.type === 'tags' && /*#__PURE__*/React.createElement("div", {
+  }, tr("+ Language"))), sec.type === 'tags' && /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap tag-container text-[0.85em]"
   }, sec.items.map((tag, i) => /*#__PURE__*/React.createElement("span", {
     key: i,
@@ -1197,7 +1218,7 @@ function App() {
       ni[i].title = v;
       updateSection(pIdx, sIdx, 'items', ni);
     },
-    placeholder: "Project"
+    placeholder: tr("Project")
   }), "                                                                "), "                                                                ", /*#__PURE__*/React.createElement("div", {
     className: "text-[0.8em] opacity-70 leading-relaxed"
   }, "                                                                    ", /*#__PURE__*/React.createElement(Editable, {
@@ -1207,7 +1228,7 @@ function App() {
       ni[i].desc = v;
       updateSection(pIdx, sIdx, 'items', ni);
     },
-    placeholder: "Desc...",
+    placeholder: tr("Desc..."),
     multiline: true
   }), "                                                                "), "                                                                ", /*#__PURE__*/React.createElement("button", {
     onClick: () => {
@@ -1228,7 +1249,7 @@ function App() {
       sections: []
     }]),
     className: "no-print mt-4 px-6 py-3 rounded border-2 border-dashed ui-dashed font-bold"
-  }, "Add Page"), "                    "), "                ");
+  }, tr("Add Page")), "                    "), "                ");
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(/*#__PURE__*/React.createElement(App, null));
