@@ -9,6 +9,10 @@
 
 const I18N = {
     es: {
+        'Late shift.': 'Turno nocturno.',
+        'Good morning.': 'Buenos días.',
+        'Good afternoon.': 'Buenas tardes.',
+        'Good evening.': 'Buenas noches.',
         // Section controls (hover toolbar)
         'Move Up': 'Subir',
         'Move Down': 'Bajar',
@@ -53,6 +57,10 @@ const I18N = {
         'Desc...': 'Descripción...',
     },
     'pt-BR': {
+        'Late shift.': 'Turno da noite.',
+        'Good morning.': 'Bom dia.',
+        'Good afternoon.': 'Boa tarde.',
+        'Good evening.': 'Boa noite.',
         'Move Up': 'Mover para cima',
         'Move Down': 'Mover para baixo',
         'Full Width': 'Largura total',
@@ -91,6 +99,10 @@ const I18N = {
         'Desc...': 'Descrição...',
     },
     ja: {
+        'Late shift.': '夜勤お疲れさま。',
+        'Good morning.': 'おはようございます。',
+        'Good afternoon.': 'こんにちは。',
+        'Good evening.': 'こんばんは。',
         'Move Up': '上へ移動',
         'Move Down': '下へ移動',
         'Full Width': '全幅',
@@ -129,6 +141,10 @@ const I18N = {
         'Desc...': '説明...',
     },
     ru: {
+        'Late shift.': 'Ночная смена.',
+        'Good morning.': 'Доброе утро.',
+        'Good afternoon.': 'Добрый день.',
+        'Good evening.': 'Добрый вечер.',
         'Move Up': 'Вверх',
         'Move Down': 'Вниз',
         'Full Width': 'Во всю ширину',
