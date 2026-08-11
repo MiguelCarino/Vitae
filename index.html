@@ -14,11 +14,11 @@
 
     <style>
         /* --- CORE STYLES --- */
-        :root { 
-            --accent: #0ea5e9; 
-            --page-margin: 35px; 
-            --module-gap: 0px; /* Forced Minimum */
-            --item-gap: 0px;   /* Forced Minimum */
+        :root {
+            --accent: #0ea5e9;
+            --page-margin: 35px;
+            --module-gap: 15px; /* vertical space between stacked sections */
+            --item-gap: 0px;    /* internal space inside a section */
         }
         body { background-color: #050505; color: #fff; font-family: 'IBM Plex Sans', sans-serif; overflow-x: hidden; }
         
@@ -39,16 +39,21 @@
         .size-letter { width: 215.9mm; min-height: 279.4mm; }
         .size-legal { width: 215.9mm; min-height: 355.6mm; }
 
-        /* The Grid */
-        .resume-grid { display: grid; grid-template-columns: 7fr 5fr; gap: 2.5rem; }
+        /* The Grid. Column gap separates the two tracks; row gap is the
+           section rhythm, so --module-gap alone controls vertical spacing. */
+        .resume-grid { display: grid; grid-template-columns: 7fr 5fr; column-gap: 2.5rem; row-gap: var(--module-gap); }
+        /* ATS mode. The child override matters: col-left/col-right pin an
+           explicit grid-column, which would otherwise conjure an implicit
+           second track back into existence. */
+        .resume-grid.ats { grid-template-columns: 1fr; column-gap: 0; }
+        .resume-grid.ats > * { grid-column: 1 / -1; }
         .col-full { grid-column: 1 / -1; }
         .col-left { grid-column: 1 / 2; }
         .col-right { grid-column: 2 / 3; }
         
         /* SPACING SYSTEM */
-        .section-item { 
-            margin-bottom: -25px; /* Fixed visual spacing for readability */
-            position: relative; 
+        .section-item {
+            position: relative;
             break-inside: avoid;
         }
 
@@ -72,13 +77,22 @@
                 padding: var(--page-margin) !important;
                 border: none; 
                 page-break-after: always;
-                min-height: 100%;
+                /* Do NOT reassert the on-screen paper height here. .size-* is
+                   exactly one sheet, and @page margin is 0, so any rounding
+                   over that emits a trailing blank page. page-break-after
+                   already does the pagination. */
+                min-height: 0;
                 height: auto;
             }
             .page-container:last-child { page-break-after: auto; }
             
             /* Ensure icons align perfectly in print */
             .icon-wrapper { margin-right: 6px !important; display: inline-block; vertical-align: middle; }
+
+            /* Empty fields must not print their placeholder. CSS-generated
+               content also lands in the PDF text layer, which breaks ATS
+               parsing as well as looking like stray grey text. */
+            .editable:empty:before { content: none !important; }
         }
 
         /* Editable Areas */

@@ -9,6 +9,77 @@ const {
 // literal (which is also the dictionary key).
 const tr = key => typeof window.t === 'function' ? window.t(key) : key;
 
+// Flatten the résumé to plain text, in document order. Applicant tracking
+// systems read a PDF by glyph position, so a two-column layout interleaves the
+// columns into nonsense; this gives a copy-paste source that cannot be
+// scrambled. Unknown section types are skipped rather than guessed at.
+const resumeToText = pages => {
+  const out = [];
+  // Editable stores HTML (contentEditable innerHTML, links included), so every
+  // field has to be flattened before it can go into a text file.
+  const flat = html => {
+    if (!html) return '';
+    const el = document.createElement('div');
+    el.innerHTML = String(html)
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(div|p|li|tr|h[1-6])>/gi, '\n');
+    return (el.textContent || '').replace(/ /g, ' ').replace(/[ \t]+\n/g, '\n').trim();
+  };
+  const push = s => out.push(flat(s));
+  pages.forEach(page => page.sections.forEach(sec => {
+    const items = sec.items || [];
+    if (sec.title) out.push(flat(sec.title).toUpperCase());
+    switch (sec.type) {
+      case 'header':
+        push((sec.data && sec.data.name) || '');
+        if (sec.data && sec.data.title) push(sec.data.title);
+        break;
+      case 'contact':
+        push(items.map(i => i.text).filter(Boolean).join('  |  '));
+        break;
+      case 'text':
+      case 'disclaimer':
+        push(sec.content || '');
+        break;
+      case 'list':
+        items.forEach(i => {
+          push([i.title, i.subtitle].filter(Boolean).join(' — '));
+          if (i.desc) push(i.desc);
+          push('');
+        });
+        break;
+      case 'languages':
+        items.forEach(i => push([i.title, i.subtitle].filter(Boolean).join(': ')));
+        break;
+      case 'tags':
+        push(items.filter(Boolean).join(', '));
+        break;
+      case 'grid':
+        items.forEach(i => {
+          if (i.title) push(i.title);
+          if (i.desc) push(i.desc);
+          push('');
+        });
+        break;
+      case 'references':
+        items.forEach(i => push([i.name, i.role, i.contact].filter(Boolean).join(' — ')));
+        break;
+    }
+    push('');
+  }));
+  // Collapse the runs of blank lines the per-item padding leaves behind.
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+};
+
+const downloadText = (filename, text) => {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 // --- ICONS ---
 const Icons = {
   Trash: () => /*#__PURE__*/React.createElement("svg", {
@@ -534,6 +605,9 @@ function App() {
   });
   const [activePage, setActivePage] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
+  // View-only. Deliberately not persisted to config, so toggling it never
+  // rewrites the hash and never touches a saved résumé's column choices.
+  const [atsMode, setAtsMode] = useState(false);
   const saveTimeoutRef = useRef(null);
   // i18n: re-render the chrome once the deferred i18n.js has loaded and on
   // every fleet language switch. Document data is never touched.
@@ -871,6 +945,14 @@ function App() {
     }),
     className: "ui-sec hover:text-white px-2"
   }, config.darkModeResume ? '☀' : '☾'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setAtsMode(!atsMode),
+    className: `px-2 py-1.5 rounded text-xs font-bold border ${atsMode ? 'btn-primary' : 'ui-tool'}`,
+    title: tr("Stack every section into one column so applicant tracking systems read the PDF in order")
+  }, tr("ATS")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => downloadText('resume.txt', resumeToText(pages)),
+    className: "ui-tool px-2 py-1.5 rounded text-xs font-bold border",
+    title: tr("Download the résumé as plain text")
+  }, tr("TXT")), /*#__PURE__*/React.createElement("button", {
     onClick: () => window.print(),
     className: "btn-primary px-3 py-1.5 rounded text-xs font-bold shadow-lg"
   }, tr("Print PDF"))), /*#__PURE__*/React.createElement("div", {
@@ -932,12 +1014,14 @@ function App() {
   }, tr("Your data is stored "), /*#__PURE__*/React.createElement("strong", null, tr("locally in the URL hash")), tr(". It is never sent to any server. You own your data and the generated PDF.")), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-3 text-xs pt-2 border-t ui-border"
   }, /*#__PURE__*/React.createElement("a", {
-    href: "https://github.com",
+    href: "https://github.com/MiguelCarino/Vitae",
     target: "_blank",
+    rel: "noopener",
     className: "text-white ui-link"
   }, "GitHub"), /*#__PURE__*/React.createElement("a", {
-    href: "https://linkedin.com",
+    href: "https://www.linkedin.com/in/miguelcarino94/",
     target: "_blank",
+    rel: "noopener",
     className: "text-white ui-link"
   }, "LinkedIn"))))), /*#__PURE__*/React.createElement("div", {
     className: "flex-1 min-h-0 pt-8 pb-20 pr-16 flex flex-col items-center gap-8 overflow-y-auto print:p-0 print:m-0 print:overflow-visible print:bg-white",
@@ -946,8 +1030,8 @@ function App() {
       fontFamily: config.font,
       fontSize: `${config.size}px`,
       '--page-margin': `${config.margin}px`,
-      '--module-gap': '0px',
-      '--item-gap': '0px'
+      '--module-gap': `${config.moduleGap ?? 15}px`,
+      '--item-gap': `${config.itemGap ?? 0}px`
     }
   }, pages.map((page, pIdx) => /*#__PURE__*/React.createElement("div", {
     key: page.id,
@@ -964,10 +1048,10 @@ function App() {
     },
     className: "page-delete-btn absolute top-2 right-2 p-2 bg-red-100 text-red-500 rounded hover:bg-red-500 hover:text-white opacity-0 group-hover/page:opacity-100 transition z-50"
   }, /*#__PURE__*/React.createElement(Icons.Trash, null)), /*#__PURE__*/React.createElement("div", {
-    className: "resume-grid"
+    className: `resume-grid ${atsMode ? 'ats' : ''}`
   }, page.sections.map((sec, sIdx) => /*#__PURE__*/React.createElement("div", {
     key: sec.id,
-    className: `relative group section-item section-${sec.type} ${sec.col}`
+    className: `relative group section-item section-${sec.type} ${atsMode ? 'col-full' : sec.col}`
   }, /*#__PURE__*/React.createElement(SectionControl, {
     onDelete: () => {
       const np = [...pages];
@@ -1092,7 +1176,9 @@ function App() {
     key: i,
     className: "group/item relative"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between items-baseline mb-0.5"
+    // Wrap as a unit: a long role/date string drops to its own line instead of
+    // shrinking the employer name and interleaving the two.
+    className: "flex flex-wrap justify-between items-baseline gap-x-3 mb-0.5"
   }, /*#__PURE__*/React.createElement("div", {
     className: "font-bold text-[1em]"
   }, /*#__PURE__*/React.createElement(Editable, {
