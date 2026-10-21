@@ -880,7 +880,8 @@ function App() {
       ...config,
       paperSize: e.target.value
     }),
-    className: "ui-input ui-sec text-xs p-1.5 rounded border font-mono uppercase"
+    className: "ui-input ui-sec text-xs p-1.5 rounded border font-mono uppercase",
+    "aria-label": tr("Paper size")
   }, /*#__PURE__*/React.createElement("option", {
     value: "a4"
   }, "A4"), /*#__PURE__*/React.createElement("option", {
@@ -898,6 +899,8 @@ function App() {
       accent: c
     }),
     className: `color-btn ${config.accent === c ? 'active' : ''}`,
+    "aria-label": tr("Accent colour") + " " + c,
+    "aria-pressed": config.accent === c,
     style: {
       background: c
     }
@@ -929,7 +932,8 @@ function App() {
       ...config,
       font: e.target.value
     }),
-    className: "ui-input text-xs text-white p-2 rounded font-bold border"
+    className: "ui-input text-xs text-white p-2 rounded font-bold border",
+    "aria-label": tr("Font")
   }, /*#__PURE__*/React.createElement("option", {
     value: "IBM Plex Sans"
   }, "IBM Plex"), /*#__PURE__*/React.createElement("option", {
@@ -1046,7 +1050,8 @@ function App() {
       e.stopPropagation();
       deletePage(page.id);
     },
-    className: "page-delete-btn absolute top-2 right-2 p-2 bg-red-100 text-red-500 rounded hover:bg-red-500 hover:text-white opacity-0 group-hover/page:opacity-100 transition z-50"
+    className: "page-delete-btn absolute top-2 right-2 p-2 bg-red-100 text-red-500 rounded hover:bg-red-500 hover:text-white opacity-0 group-hover/page:opacity-100 transition z-50",
+    "aria-label": tr("Delete page")
   }, /*#__PURE__*/React.createElement(Icons.Trash, null)), /*#__PURE__*/React.createElement("div", {
     className: `resume-grid ${atsMode ? 'ats' : ''}`
   }, page.sections.map((sec, sIdx) => /*#__PURE__*/React.createElement("div", {
