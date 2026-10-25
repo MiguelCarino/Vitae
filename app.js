@@ -557,54 +557,208 @@ const SectionControl = ({
   className: "menu-bridge"
 }));
 
-// Portals its children into the shared Carino navbar's right cluster,
-// so the resume controls live in the SAME bar (no second navbar). Waits
-// for #carinoNav to be injected (carino-navbar.js is deferred).
-function CarinoActions({
-  children
-}) {
-  const [host, setHost] = useState(null);
-  useEffect(() => {
-    let raf,
-      cancelled = false;
-    (function attach() {
-      if (cancelled) return;
-      const right = document.querySelector('#carinoNav .cn-right');
-      if (right) {
-        let box = right.querySelector('#resumeActions');
-        if (!box) {
-          box = document.createElement('div');
-          box.id = 'resumeActions';
-          box.className = 'cn-actions';
-          right.insertBefore(box, right.querySelector('.social-row'));
-        }
-        setHost(box);
-      } else {
-        raf = requestAnimationFrame(attach);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-  return host ? ReactDOM.createPortal(children, host) : null;
-}
-function App() {
-  const [pages, setPages] = useState([{
+// The fictional sample behind "Open the example". A function, because the
+// editor mutates sections in place and the sample must come back clean.
+const samplePages = () => JSON.parse(JSON.stringify(SAMPLE_PAGES));
+const SAMPLE_PAGES = [{
     id: 1,
-    sections: []
-  }]);
-  const [config, setConfig] = useState({
-    font: 'IBM Plex Sans',
-    accent: '#0ea5e9',
-    size: 13.5,
-    margin: 20,
-    paperSize: 'a4',
-    darkModeResume: false
-  });
+    sections: [{
+      id: 'h1',
+      type: 'header',
+      col: 'col-full',
+      data: {
+        name: "Ethan Miller",
+        title: "Senior IT Systems Engineer",
+        border: true
+      }
+    }, {
+      id: 'c1',
+      type: 'contact',
+      col: 'col-full',
+      items: [{
+        icon: 'pin',
+        text: "Seattle, USA"
+      }, {
+        icon: 'phone',
+        text: "+1 206 555 0142"
+      }, {
+        icon: 'mail',
+        text: "ethan.miller@example.com"
+      }, {
+        icon: 'in',
+        text: "linkedin.com/in/ethanmiller-tech"
+      }, {
+        icon: 'link',
+        text: "ethanmiller.dev"
+      }]
+    }, {
+      id: 'exp',
+      type: 'list',
+      title: "PROFESSIONAL EXPERIENCE",
+      col: 'col-left',
+      items: [{
+        title: "Northbridge Cloud Services",
+        subtitle: "Senior Infrastructure Engineer | March 2022 - Present",
+        desc: "Design and maintain hybrid cloud infrastructure for enterprise clients. Lead automation initiatives using Infrastructure as Code and container platforms. Improved system uptime and reduced deployment times through CI/CD pipelines and proactive monitoring.\nnorthbridgecloud.example.com"
+      }, {
+        title: "BluePeak Technologies",
+        subtitle: "Systems Administrator | July 2018 - February 2022",
+        desc: "Managed Windows and Linux servers across multiple sites. Implemented backup and disaster recovery strategies. Standardized system configurations and reduced licensing costs by adopting open-source solutions.\nbluepeaktech.example.com"
+      }, {
+        title: "Rivergate IT Consulting",
+        subtitle: "IT Support Specialist | June 2015 – June 2018",
+        desc: "Provided Tier 2/3 support for business clients, including network setup, endpoint management, and server maintenance. Assisted in small business infrastructure design and security hardening.\nrivergateit.example.com"
+      }]
+    }, {
+      id: 'tech1',
+      type: 'list',
+      title: "TECHNICAL SKILLS",
+      col: 'col-right',
+      items: [{
+        title: "Operating Systems",
+        subtitle: "",
+        desc: "Linux, Windows Server, macOS."
+      }, {
+        title: "Programming",
+        subtitle: "",
+        desc: "Python, Go, Bash, JavaScript."
+      }, {
+        title: "Cloud Platforms",
+        subtitle: "",
+        desc: "AWS, Azure, Google Cloud."
+      }, {
+        title: "Containers",
+        subtitle: "",
+        desc: "Docker, Kubernetes."
+      }, {
+        title: "Automation",
+        subtitle: "",
+        desc: "Terraform, Ansible."
+      }, {
+        title: "Networking",
+        subtitle: "",
+        desc: "TCP/IP, VLANs, VPNs, firewalls."
+      }, {
+        title: "Monitoring",
+        subtitle: "",
+        desc: "Prometheus, Grafana, Zabbix."
+      }, {
+        title: "Databases",
+        subtitle: "",
+        desc: "PostgreSQL, MySQL, MongoDB."
+      }, {
+        title: "CI/CD",
+        subtitle: "",
+        desc: "GitHub Actions, GitLab CI."
+      }, {
+        title: "Virtualization",
+        subtitle: "",
+        desc: "VMware, Proxmox."
+      }, {
+        title: "Security",
+        subtitle: "",
+        desc: "System hardening, IAM, encrypted backups."
+      }, {
+        title: "Methodologies",
+        subtitle: "",
+        desc: "ITIL, Agile/Scrum."
+      }]
+    }, {
+      id: 'edu',
+      type: 'list',
+      title: "EDUCATION",
+      col: 'col-left',
+      items: [{
+        title: "University of Washington",
+        subtitle: "2011 - 2015",
+        desc: "BSc in Information Technology"
+      }]
+    }, {
+      id: 'lang',
+      type: 'languages',
+      title: "LANGUAGES",
+      col: 'col-right',
+      items: [{
+        title: "English",
+        subtitle: "Native"
+      }, {
+        title: "German",
+        subtitle: "B2"
+      }]
+    }, {
+      id: 'disc',
+      type: 'disclaimer',
+      col: 'col-full',
+      content: "Sample résumé generated with fictional data for layout testing."
+    }]
+  }];
+const blankPages = () => [{
+  id: 1,
+  sections: [{
+    id: 'h1',
+    type: 'header',
+    col: 'col-full',
+    data: { name: '', title: '', border: true }
+  }, {
+    id: 'c1',
+    type: 'contact',
+    col: 'col-full',
+    items: [{ icon: 'mail', text: '' }]
+  }]
+}];
+const DEFAULT_CONFIG = {
+  font: 'IBM Plex Sans',
+  accent: '#0ea5e9',
+  size: 13.5,
+  margin: 20,
+  paperSize: 'a4',
+  darkModeResume: false
+};
+// The paper widths in CSS px (96/in), for zooming the page to fit the pane.
+const PAPER_PX = { a4: 793.7, letter: 816, legal: 816 };
+const PRIVACY = "Your résumé lives in this link and this browser; it is never uploaded.";
+
+// The whole document lives in the URL hash, base64 of the JSON.
+const encodeState = (pages, config) => window.btoa(unescape(encodeURIComponent(JSON.stringify({ pages, config }))));
+const readHash = () => {
+  const hash = window.location.hash.substring(1);
+  if (!hash) return null;
+  try {
+    const saved = JSON.parse(decodeURIComponent(escape(window.atob(hash))));
+    return saved && Array.isArray(saved.pages) ? saved : null;
+  } catch (e) {
+    return null;
+  }
+};
+const downloadJson = (filename, data) => {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+const h = React.createElement;
+
+function App() {
+  // A link with a résumé in it opens straight onto the page; a bare URL
+  // opens on the empty state (the short hero).
+  const [boot] = useState(readHash);
+  const [started, setStarted] = useState(!!boot);
+  const [pages, setPages] = useState(() => boot ? boot.pages : blankPages());
+  const [config, setConfig] = useState(() => ({
+    ...DEFAULT_CONFIG,
+    ...(boot && boot.config)
+  }));
   const [activePage, setActivePage] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [drag, setDrag] = useState(false);
+  const [fit, setFit] = useState(1);
+  const wsRef = useRef(null);
+  const paneRef = useRef(null);
+  const toastTimer = useRef(null);
   // View-only. Deliberately not persisted to config, so toggling it never
   // rewrites the hash and never touches a saved résumé's column choices.
   const [atsMode, setAtsMode] = useState(false);
@@ -632,160 +786,121 @@ function App() {
     return () => document.head.removeChild(style);
   }, [config.paperSize]);
   useEffect(() => {
-    const hash = window.location.hash.substring(1);
-    if (hash) {
-      try {
-        const saved = JSON.parse(decodeURIComponent(escape(window.atob(hash))));
-        if (saved.pages) setPages(saved.pages);
-        if (saved.config) setConfig(saved.config);
-      } catch (e) {}
-    } else {
-      setPages([{
-        id: 1,
-        sections: [{
-          id: 'h1',
-          type: 'header',
-          col: 'col-full',
-          data: {
-            name: "Ethan Miller",
-            title: "Senior IT Systems Engineer",
-            border: true
-          }
-        }, {
-          id: 'c1',
-          type: 'contact',
-          col: 'col-full',
-          items: [{
-            icon: 'pin',
-            text: "Seattle, USA"
-          }, {
-            icon: 'phone',
-            text: "+1 206 555 0142"
-          }, {
-            icon: 'mail',
-            text: "ethan.miller@example.com"
-          }, {
-            icon: 'in',
-            text: "linkedin.com/in/ethanmiller-tech"
-          }, {
-            icon: 'link',
-            text: "ethanmiller.dev"
-          }]
-        }, {
-          id: 'exp',
-          type: 'list',
-          title: "PROFESSIONAL EXPERIENCE",
-          col: 'col-left',
-          items: [{
-            title: "Northbridge Cloud Services",
-            subtitle: "Senior Infrastructure Engineer | March 2022 - Present",
-            desc: "Design and maintain hybrid cloud infrastructure for enterprise clients. Lead automation initiatives using Infrastructure as Code and container platforms. Improved system uptime and reduced deployment times through CI/CD pipelines and proactive monitoring.\nnorthbridgecloud.example.com"
-          }, {
-            title: "BluePeak Technologies",
-            subtitle: "Systems Administrator | July 2018 - February 2022",
-            desc: "Managed Windows and Linux servers across multiple sites. Implemented backup and disaster recovery strategies. Standardized system configurations and reduced licensing costs by adopting open-source solutions.\nbluepeaktech.example.com"
-          }, {
-            title: "Rivergate IT Consulting",
-            subtitle: "IT Support Specialist | June 2015 – June 2018",
-            desc: "Provided Tier 2/3 support for business clients, including network setup, endpoint management, and server maintenance. Assisted in small business infrastructure design and security hardening.\nrivergateit.example.com"
-          }]
-        }, {
-          id: 'tech1',
-          type: 'list',
-          title: "TECHNICAL SKILLS",
-          col: 'col-right',
-          items: [{
-            title: "Operating Systems",
-            subtitle: "",
-            desc: "Linux, Windows Server, macOS."
-          }, {
-            title: "Programming",
-            subtitle: "",
-            desc: "Python, Go, Bash, JavaScript."
-          }, {
-            title: "Cloud Platforms",
-            subtitle: "",
-            desc: "AWS, Azure, Google Cloud."
-          }, {
-            title: "Containers",
-            subtitle: "",
-            desc: "Docker, Kubernetes."
-          }, {
-            title: "Automation",
-            subtitle: "",
-            desc: "Terraform, Ansible."
-          }, {
-            title: "Networking",
-            subtitle: "",
-            desc: "TCP/IP, VLANs, VPNs, firewalls."
-          }, {
-            title: "Monitoring",
-            subtitle: "",
-            desc: "Prometheus, Grafana, Zabbix."
-          }, {
-            title: "Databases",
-            subtitle: "",
-            desc: "PostgreSQL, MySQL, MongoDB."
-          }, {
-            title: "CI/CD",
-            subtitle: "",
-            desc: "GitHub Actions, GitLab CI."
-          }, {
-            title: "Virtualization",
-            subtitle: "",
-            desc: "VMware, Proxmox."
-          }, {
-            title: "Security",
-            subtitle: "",
-            desc: "System hardening, IAM, encrypted backups."
-          }, {
-            title: "Methodologies",
-            subtitle: "",
-            desc: "ITIL, Agile/Scrum."
-          }]
-        }, {
-          id: 'edu',
-          type: 'list',
-          title: "EDUCATION",
-          col: 'col-left',
-          items: [{
-            title: "University of Washington",
-            subtitle: "2011 - 2015",
-            desc: "BSc in Information Technology"
-          }]
-        }, {
-          id: 'lang',
-          type: 'languages',
-          title: "LANGUAGES",
-          col: 'col-right',
-          items: [{
-            title: "English",
-            subtitle: "Native"
-          }, {
-            title: "German",
-            subtitle: "B2"
-          }]
-        }, {
-          id: 'disc',
-          type: 'disclaimer',
-          col: 'col-full',
-          content: "Sample résumé generated with fictional data for layout testing."
-        }]
-      }]);
-    }
-  }, []);
-  useEffect(() => {
+    if (!started) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      const payload = {
-        pages,
-        config
-      };
-      const encoded = window.btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      window.history.replaceState(null, null, '#' + encoded);
+      window.history.replaceState(null, null, '#' + encodeState(pages, config));
     }, 1000);
     return () => clearTimeout(saveTimeoutRef.current);
-  }, [pages, config]);
+  }, [pages, config, started]);
+
+  const say = (msg, kind = 'ok') => {
+    clearTimeout(toastTimer.current);
+    setToast({ msg, kind });
+    toastTimer.current = setTimeout(() => setToast(null), 2600);
+  };
+  const begin = (newPages, newConfig) => {
+    setPages(newPages);
+    setConfig({ ...DEFAULT_CONFIG, ...newConfig });
+    setActivePage(0);
+    setStarted(true);
+  };
+  const startOver = () => {
+    setConfirmOpen(false);
+    setStarted(false);
+    setPages(blankPages());
+    setConfig(DEFAULT_CONFIG);
+    setActivePage(0);
+    window.history.replaceState(null, null, window.location.pathname + window.location.search);
+  };
+  const openFile = file => {
+    file.text().then(text => {
+      const data = JSON.parse(text);
+      if (!data || !Array.isArray(data.pages)) throw new Error('not a résumé');
+      begin(data.pages, data.config);
+      say(tr("Opened") + " " + file.name);
+    }).catch(() => say(tr("That file is not a saved Vitae résumé."), 'err'));
+  };
+
+  // Navbar controls are static markup (index.html), moved into the bar by
+  // carino-navbar.js; they read the current document through this ref.
+  const live = useRef({});
+  live.current = { pages, config };
+  useEffect(() => {
+    const wire = (id, fn) => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('click', fn);
+      return () => el && el.removeEventListener('click', fn);
+    };
+    const offs = [
+      wire('printBtn', () => window.print()),
+      wire('exportTxtBtn', () => downloadText('resume.txt', resumeToText(live.current.pages))),
+      wire('exportJsonBtn', () => downloadJson('resume.json', { app: 'vitae', version: 1, ...live.current })),
+      wire('importJsonBtn', () => document.getElementById('importFile').click()),
+      wire('startOverBtn', () => setConfirmOpen(true)),
+      wire('copyLinkBtn', () => {
+        // Write the hash now rather than wait for the debounced save.
+        window.history.replaceState(null, null, '#' + encodeState(live.current.pages, live.current.config));
+        const done = () => say(tr("Link copied. It holds the whole résumé."));
+        if (navigator.clipboard) navigator.clipboard.writeText(window.location.href).then(done, () => say(tr("Could not copy the link."), 'err'));
+        else say(tr("Could not copy the link."), 'err');
+      })
+    ];
+    const input = document.getElementById('importFile');
+    const onPick = e => {
+      if (e.target.files[0]) openFile(e.target.files[0]);
+      e.target.value = '';
+    };
+    if (input) input.addEventListener('change', onPick);
+    // Whole-window drop: a saved .json lands wherever it is dropped.
+    const over = e => {
+      if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault();
+    };
+    const drop = e => {
+      const f = e.dataTransfer && e.dataTransfer.files[0];
+      if (!f) return;
+      e.preventDefault();
+      setDrag(false);
+      openFile(f);
+    };
+    window.addEventListener('dragover', over);
+    window.addEventListener('drop', drop);
+    const esc = e => { if (e.key === 'Escape') setConfirmOpen(false); };
+    window.addEventListener('keydown', esc);
+    // The drawer (carino-ui.js, deferred) may load after this first render.
+    const drawer = () => window.CarinoUI && wsRef.current && window.CarinoUI.drawer(wsRef.current);
+    drawer();
+    document.addEventListener('DOMContentLoaded', drawer);
+    return () => {
+      offs.forEach(off => off());
+      if (input) input.removeEventListener('change', onPick);
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('drop', drop);
+      window.removeEventListener('keydown', esc);
+      document.removeEventListener('DOMContentLoaded', drawer);
+    };
+  }, []);
+  // Outputs mean nothing before there is a page.
+  useEffect(() => {
+    ['printBtn', 'exportTxtBtn', 'copyLinkBtn', 'exportJsonBtn', 'startOverBtn'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = !started;
+    });
+  }, [started]);
+  // Zoom the page to the pane's width, so a phone sees the whole sheet.
+  useEffect(() => {
+    const pane = paneRef.current;
+    if (!pane || !window.ResizeObserver) return;
+    const measure = () => {
+      const cs = getComputedStyle(pane);
+      const inner = pane.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 24;
+      setFit(Math.max(0.2, Math.min(1, inner / (PAPER_PX[config.paperSize] || 816))));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(pane);
+    return () => ro.disconnect();
+  }, [config.paperSize]);
   const deletePage = id => {
     if (pages.length === 1) return;
     const newPages = pages.filter(p => p.id !== id);
@@ -872,97 +987,148 @@ function App() {
     const item = CONTACT_ICONS.find(i => i.id === id);
     return item ? /*#__PURE__*/React.createElement(item.icon, null) : null;
   };
-  return /*#__PURE__*/React.createElement("div", {
-    className: "flex flex-col flex-1 min-h-0"
-  }, /*#__PURE__*/React.createElement(CarinoActions, null, /*#__PURE__*/React.createElement("select", {
+  const set = (key, val) => setConfig({
+    ...config,
+    [key]: val
+  });
+  const field = (id, label, control) => h("div", {
+    className: "field"
+  }, h("label", {
+    htmlFor: id
+  }, label), control);
+  const rail = h("aside", {
+    className: "ws-rail vitae-rail no-print",
+    "aria-label": tr("Page settings")
+  }, h("div", {
+    className: "t-label"
+  }, tr("Page settings")), field("cfgPaper", tr("Paper size"), h("select", {
+    id: "cfgPaper",
+    className: "select",
     value: config.paperSize,
-    onChange: e => setConfig({
-      ...config,
-      paperSize: e.target.value
-    }),
-    className: "ui-input ui-sec text-xs p-1.5 rounded border font-mono uppercase",
-    "aria-label": tr("Paper size")
-  }, /*#__PURE__*/React.createElement("option", {
+    onChange: e => set('paperSize', e.target.value)
+  }, h("option", {
     value: "a4"
-  }, "A4"), /*#__PURE__*/React.createElement("option", {
+  }, "A4"), h("option", {
     value: "letter"
-  }, "Letter"), /*#__PURE__*/React.createElement("option", {
+  }, "Letter"), h("option", {
     value: "legal"
-  }, "Legal")), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-4 border-l ui-border pl-3"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "color-grid w-32"
-  }, ACCENT_COLORS.map(c => /*#__PURE__*/React.createElement("button", {
+  }, "Legal"))), h("div", {
+    className: "field"
+  }, h("label", null, tr("Accent colour")), h("div", {
+    className: "color-grid"
+  }, ACCENT_COLORS.map(c => h("button", {
     key: c,
-    onClick: () => setConfig({
-      ...config,
-      accent: c
-    }),
+    type: "button",
+    onClick: () => set('accent', c),
     className: `color-btn ${config.accent === c ? 'active' : ''}`,
     "aria-label": tr("Accent colour") + " " + c,
     "aria-pressed": config.accent === c,
     style: {
       background: c
     }
-  }))), /*#__PURE__*/React.createElement("label", {
-    className: "flex flex-col text-[9px] uppercase font-bold ui-muted group"
-  }, tr("Size"), /*#__PURE__*/React.createElement("input", {
+  })))), h("div", {
+    className: "row2"
+  }, field("cfgSize", tr("Text size"), h("input", {
+    id: "cfgSize",
     type: "number",
+    min: 8,
+    max: 24,
+    step: 0.5,
+    className: "input",
     value: config.size,
-    onChange: e => setConfig({
-      ...config,
-      size: e.target.value
-    }),
-    className: "w-12 ui-input text-white rounded px-1 border mt-1"
-  })), /*#__PURE__*/React.createElement("label", {
-    className: "flex flex-col text-[9px] uppercase font-bold ui-muted group"
-  }, tr("Margin"), /*#__PURE__*/React.createElement("input", {
+    onChange: e => set('size', e.target.value)
+  })), field("cfgMargin", tr("Margin"), h("input", {
+    id: "cfgMargin",
     type: "range",
     min: "10",
     max: "60",
     value: config.margin,
-    onChange: e => setConfig({
-      ...config,
-      margin: e.target.value
-    }),
-    className: "w-16 ui-range h-1.5 rounded-lg appearance-none cursor-pointer mt-1"
-  }))), /*#__PURE__*/React.createElement("select", {
+    onChange: e => set('margin', e.target.value)
+  }))), field("cfgFont", tr("Font"), h("select", {
+    id: "cfgFont",
+    className: "select",
     value: config.font,
-    onChange: e => setConfig({
-      ...config,
-      font: e.target.value
-    }),
-    className: "ui-input text-xs text-white p-2 rounded font-bold border",
-    "aria-label": tr("Font")
-  }, /*#__PURE__*/React.createElement("option", {
+    onChange: e => set('font', e.target.value)
+  }, h("option", {
     value: "IBM Plex Sans"
-  }, "IBM Plex"), /*#__PURE__*/React.createElement("option", {
+  }, "IBM Plex"), h("option", {
     value: "Red Hat Display"
-  }, "Red Hat"), /*#__PURE__*/React.createElement("option", {
+  }, "Red Hat"), h("option", {
     value: "Inter"
-  }, "Inter"), /*#__PURE__*/React.createElement("option", {
+  }, "Inter"), h("option", {
     value: "Roboto"
-  }, "Roboto")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setConfig({
-      ...config,
-      darkModeResume: !config.darkModeResume
-    }),
-    className: "ui-sec hover:text-white px-2"
-  }, config.darkModeResume ? '☀' : '☾'), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setAtsMode(!atsMode),
-    className: `px-2 py-1.5 rounded text-xs font-bold border ${atsMode ? 'btn-primary' : 'ui-tool'}`,
-    title: tr("Stack every section into one column so applicant tracking systems read the PDF in order")
-  }, tr("ATS")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => downloadText('resume.txt', resumeToText(pages)),
-    className: "ui-tool px-2 py-1.5 rounded text-xs font-bold border",
-    title: tr("Download the résumé as plain text")
-  }, tr("TXT")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => window.print(),
-    className: "btn-primary px-3 py-1.5 rounded text-xs font-bold shadow-lg"
-  }, tr("Print PDF"))), /*#__PURE__*/React.createElement("div", {
-    className: "fixed right-0 top-[60px] bottom-0 w-16 ui-panel border-l z-40 flex flex-col items-center py-4 gap-4 no-print overflow-y-auto"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[9px] font-bold ui-muted uppercase tracking-widest mb-1"
+  }, "Roboto"))), h("label", {
+    className: "check"
+  }, h("input", {
+    type: "checkbox",
+    checked: !!config.darkModeResume,
+    onChange: () => set('darkModeResume', !config.darkModeResume)
+  }), h("span", null, tr("Dark page"))), h("div", null, h("label", {
+    className: "check"
+  }, h("input", {
+    type: "checkbox",
+    checked: atsMode,
+    onChange: () => setAtsMode(!atsMode)
+  }), h("span", null, tr("One column (ATS)"))), h("p", {
+    className: "hint"
+  }, tr("Stack every section into one column so applicant tracking systems read the PDF in order"))), h("div", {
+    className: "ws-rail-foot"
+  }, h("p", {
+    className: "privacy-line"
+  }, tr(PRIVACY))));
+  const pickFile = () => document.getElementById('importFile').click();
+  const hero = h("div", {
+    className: "short-hero"
+  }, h("img", {
+    className: "mark",
+    src: "logo.svg",
+    alt: "",
+    width: 48,
+    height: 48
+  }), h("h1", null, h("span", null, tr("A clean résumé,")), h("br"), h("span", {
+    className: "gold"
+  }, tr("ready to print."))), h("p", {
+    className: "sh-lede"
+  }, tr("Type straight onto the page, pick a colour and a font, then print it to PDF.")), h("div", {
+    className: "sh-input"
+  }, h("button", {
+    type: "button",
+    className: "btn btn-primary",
+    onClick: () => begin(blankPages(), DEFAULT_CONFIG)
+  }, tr("Start blank")), h("div", {
+    className: `dropzone ${drag ? 'dragover' : ''}`,
+    role: "button",
+    tabIndex: 0,
+    onClick: pickFile,
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        pickFile();
+      }
+    },
+    onDragEnter: () => setDrag(true),
+    onDragLeave: e => {
+      if (!e.currentTarget.contains(e.relatedTarget)) setDrag(false);
+    }
+  }, h("div", null, tr("Drop a saved résumé (.json) here or"), " ", h("strong", null, tr("browse"))), h("div", {
+    className: "dz-hint"
+  }, tr("Opened in this browser")))), h("div", {
+    className: "examples"
+  }, h("span", {
+    className: "ex-label"
+  }, tr("Try:")), h("button", {
+    type: "button",
+    className: "chip-tag",
+    onClick: () => begin(samplePages(), DEFAULT_CONFIG)
+  }, tr("Open the example"))), h("p", {
+    className: "privacy-line"
+  }, tr(PRIVACY)));
+  const addRail = h("div", {
+    className: "vitae-add no-print",
+    role: "toolbar",
+    "aria-label": tr("Add")
+  }, h("div", {
+    className: "add-lbl"
   }, tr("Add")), [{
     id: 'header',
     label: 'Head',
@@ -999,38 +1165,94 @@ function App() {
     id: 'disclaimer',
     label: 'Disc',
     icon: Icons.ModDisclaimer
-  }].map(tool => /*#__PURE__*/React.createElement("button", {
+  }].map(tool => h("button", {
     key: tool.id,
+    type: "button",
     onClick: () => addSection(tool.id),
-    className: "group w-10 h-10 shrink-0 rounded ui-tool flex items-center justify-center transition shadow-sm border relative",
-    title: tr(tool.label)
-  }, /*#__PURE__*/React.createElement(tool.icon, null))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-auto mb-4 group relative cursor-pointer",
-    onClick: () => setShowInfo(!showInfo)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: `w-8 h-8 rounded-full ui-tool flex items-center justify-center transition ${showInfo ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement(Icons.InfoOutline, null)), /*#__PURE__*/React.createElement("div", {
+    className: "vitae-tool",
+    title: tr(tool.label),
+    "aria-label": tr(tool.label)
+  }, h(tool.icon, null))), h("div", {
+    style: {
+      marginTop: 'auto'
+    }
+  }, h("button", {
+    type: "button",
+    className: `vitae-tool round ${showInfo ? 'active' : ''}`,
+    onClick: () => setShowInfo(!showInfo),
+    "aria-label": tr("Privacy & License"),
+    "aria-expanded": showInfo
+  }, h(Icons.InfoOutline, null)), h("div", {
     className: `sidebar-tooltip ${showInfo ? 'active' : ''}`
-  }, /*#__PURE__*/React.createElement("div", {
+  }, h("div", {
     className: "font-bold mb-1 ui-accent"
-  }, tr("Privacy & License")), /*#__PURE__*/React.createElement("div", {
+  }, tr("Privacy & License")), h("div", {
     className: "mb-2"
-  }, tr("Your data is stored "), /*#__PURE__*/React.createElement("strong", null, tr("locally in the URL hash")), tr(". It is never sent to any server. You own your data and the generated PDF.")), /*#__PURE__*/React.createElement("div", {
+  }, tr("Your data is stored "), h("strong", null, tr("locally in the URL hash")), tr(". It is never sent to any server. You own your data and the generated PDF.")), h("div", {
     className: "flex gap-3 text-xs pt-2 border-t ui-border"
-  }, /*#__PURE__*/React.createElement("a", {
+  }, h("a", {
     href: "https://github.com/MiguelCarino/Vitae",
     target: "_blank",
-    rel: "noopener",
-    className: "text-white ui-link"
-  }, "GitHub"), /*#__PURE__*/React.createElement("a", {
+    rel: "noopener"
+  }, "GitHub"), h("a", {
     href: "https://www.linkedin.com/in/miguelcarino94/",
     target: "_blank",
-    rel: "noopener",
-    className: "text-white ui-link"
-  }, "LinkedIn"))))), /*#__PURE__*/React.createElement("div", {
-    className: "flex-1 min-h-0 pt-8 pb-20 pr-16 flex flex-col items-center gap-8 overflow-y-auto print:p-0 print:m-0 print:overflow-visible print:bg-white",
+    rel: "noopener"
+  }, "LinkedIn")))));
+  const confirmModal = confirmOpen && h("div", {
+    className: "modal-scrim no-print",
+    onClick: e => {
+      if (e.target === e.currentTarget) setConfirmOpen(false);
+    }
+  }, h("div", {
+    className: "modal",
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-labelledby": "startOverTitle"
+  }, h("div", {
+    className: "modal-head"
+  }, h("div", {
+    className: "modal-title",
+    id: "startOverTitle"
+  }, tr("Start over?")), h("button", {
+    type: "button",
+    className: "modal-x",
+    "aria-label": tr("Close"),
+    onClick: () => setConfirmOpen(false)
+  }, "✕")), h("div", {
+    className: "modal-body"
+  }, tr("This clears the résumé in this tab. Save a copy or keep the link first if you want it back.")), h("div", {
+    className: "modal-foot"
+  }, h("button", {
+    type: "button",
+    className: "btn btn-ghost",
+    onClick: () => setConfirmOpen(false)
+  }, tr("Cancel")), h("button", {
+    type: "button",
+    className: "btn btn-primary",
+    onClick: startOver
+  }, tr("Start over")))));
+  const toastEl = h("div", {
+    className: `toast ${toast ? toast.kind + ' show' : ''}`,
+    role: "status",
+    "aria-live": "polite"
+  }, toast ? toast.msg : '');
+  return h(React.Fragment, null, h("div", {
+    className: "ws vitae-ws",
+    ref: wsRef
+  }, rail, h("div", {
+    className: "ws-pane vitae-pane",
+    ref: paneRef
+  }, h("button", {
+    type: "button",
+    className: "cs-btn ws-toggle no-print",
+    "data-ws-toggle": true,
+    "aria-label": tr("Page settings")
+  }, "☰ ", tr("Settings")), !started ? hero : h("div", {
+    className: "vitae-doc",
     style: {
-      '--accent': config.accent,
+      zoom: fit,
+      '--cv-accent': config.accent,
       fontFamily: config.font,
       fontSize: `${config.size}px`,
       '--page-margin': `${config.margin}px`,
@@ -1340,7 +1562,7 @@ function App() {
       sections: []
     }]),
     className: "no-print mt-4 px-6 py-3 rounded border-2 border-dashed ui-dashed font-bold"
-  }, tr("Add Page")), "                    "), "                ");
+  }, tr("Add Page")))), started && addRail), confirmModal, toastEl);
 }
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(/*#__PURE__*/React.createElement(App, null));

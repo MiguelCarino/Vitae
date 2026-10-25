@@ -28,6 +28,7 @@
     <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Vitae", "url": "https://vitae.carino.systems/", "description": "Build a clean, print-ready résumé with live editing and PDF export. Your data stays in your browser.", "operatingSystem": "Any (runs in a web browser)", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
     <!-- /carino:head -->
     
+    <link rel="stylesheet" href="carino-ui.css">
     <link rel="stylesheet" href="fonts/carino-fonts.css">
     
     <script src="vendor/react.production.min.js"></script>
@@ -37,12 +38,11 @@
     <style>
         /* --- CORE STYLES --- */
         :root {
-            --accent: #0ea5e9;
+            --cv-accent: #0ea5e9; /* the résumé's own colour, picked in the rail */
             --page-margin: 35px;
             --module-gap: 15px; /* vertical space between stacked sections */
             --item-gap: 0px;    /* internal space inside a section */
         }
-        body { background-color: #050505; color: #fff; font-family: 'IBM Plex Sans', sans-serif; overflow-x: hidden; }
         
         /* PAGE DIMENSIONS */
         .page-container {
@@ -51,6 +51,7 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
             position: relative;
             color: #1e293b;
+            line-height: 1.5;
             padding: var(--page-margin);
             overflow: visible; 
             transition: width 0.3s, min-height 0.3s;
@@ -85,13 +86,16 @@
         .tag-container { gap: var(--item-gap); }
         
         /* Links */
-        a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted currentColor; cursor: pointer; }
-        a:hover { border-bottom-style: solid; }
+        .page-container a { color: var(--cv-accent); text-decoration: none; border-bottom: 1px dotted currentColor; cursor: pointer; }
+        .page-container a:hover { border-bottom-style: solid; }
 
         /* Print Overrides - STRICT GAP REMOVAL */
         @media print {
             body, html { background: white; margin: 0; padding: 0; overflow: visible; height: 100%; }
-            #app-ui, .no-print, .menu-bridge, .page-delete-btn { display: none !important; }
+            #app-ui, .no-print, .menu-bridge, .page-delete-btn,
+            .ws-rail, .ws-scrim, .ws-toggle, .vitae-add, .toast { display: none !important; }
+            .ws, .ws-pane { display: block; min-height: 0; padding: 0; overflow: visible; background: white; }
+            .vitae-doc { zoom: 1 !important; padding: 0; gap: 0; }
             
             .page-container {
                 box-shadow: none; 
@@ -125,61 +129,84 @@
         /* Control Menu Bridge */
         .menu-bridge { position: absolute; bottom: -10px; left: 0; width: 100%; height: 10px; }
         
-        /* Sidebar Tooltip */
+        /* Info popover at the foot of the Add rail */
         .sidebar-tooltip {
             visibility: hidden;
             opacity: 0;
             position: fixed;
-            left: 4.5rem; 
+            right: 4.5rem;
             bottom: 1.5rem;
             width: 250px;
-            background: #0d0d0d;
-            color: #a3a3a3;
+            background: var(--bg-elev);
+            color: var(--text-sec);
             padding: 1rem;
             border-radius: 0.5rem;
-            border: 1px solid #262626;
+            border: 1px solid var(--border);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             transition: opacity 0.2s;
             z-index: 100;
-            font-size: 0.75rem;
+            font-size: var(--fs-sm);
             line-height: 1.4;
         }
         .sidebar-tooltip.active { visibility: visible; opacity: 1; pointer-events: auto; }
+        .sidebar-tooltip a { color: var(--text); }
+        .sidebar-tooltip a:hover { color: var(--accent); }
 
-        /* Color Picker Grid */
-        .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
-        .color-btn { width: 100%; height: 18px; border-radius: 4px; transition: transform 0.1s; border: 1px solid rgba(255,255,255,0.1); }
-        .color-btn:hover { transform: scale(1.1); z-index: 10; border-color: white; }
-        .color-btn.active { border: 2px solid white; }
+        /* Colour swatches in the settings rail */
+        .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+        .color-btn { width: 100%; height: 22px; border-radius: 4px; transition: transform 0.1s; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+        .color-btn:hover { transform: scale(1.1); z-index: 10; border-color: var(--text); }
+        .color-btn.active { border: 2px solid var(--text); }
 
-        /* Carino brand palette for the EDITOR chrome only — the resume
-           document keeps its own user-picked colors. Loaded after
-           tailwind.css so these win over same-specificity utilities. */
-        .ui-accent { color: #eab308; }
-        .ui-sec { color: #a3a3a3; }
-        .ui-muted { color: #666; }
-        .ui-border { border-color: #262626; }
-        .bg-accent { background-color: #eab308; }
-        .ui-input { background: #0d0d0d; border-color: #262626; }
-        .ui-panel { background: #0d0d0d; border-color: #262626; }
-        .ui-range { accent-color: #eab308; background: #262626; }
-        .ui-hover:hover { background: #262626; }
-        .ui-link:hover { color: #eab308; }
-        .ui-tool { background: #0d0d0d; border-color: #262626; color: #a3a3a3; }
-        .ui-tool:hover, .ui-tool.active { background: #eab308; border-color: #eab308; color: #050505; }
-        .ui-dashed { border-color: #262626; color: #666; }
-        .ui-dashed:hover { border-color: #eab308; color: #fff; }
-        .btn-primary { background: #eab308; color: #050505; }
-        .btn-primary:hover { background: #fbbf24; }
+        /* Editor chrome around the page, in Branding tokens. The résumé itself
+           keeps the colours the user picks (--cv-accent). */
+        .ui-accent { color: var(--accent); }
+        .ui-border { border-color: var(--border); }
+        .bg-accent { background-color: var(--accent); }
+        .ui-panel { background: var(--bg-elev); border-color: var(--border); }
+        .ui-hover:hover { background: var(--border); }
+        .ui-dashed { border-color: var(--border); color: var(--text-muted); }
+        .ui-dashed:hover { border-color: var(--accent); color: var(--text); }
 
-        /* Carino navbar merge: one sticky top bar (the injected #carinoNav), the
-           resume controls are portaled into it. Body is a flex column so the nav
-           never scrolls away — only the workspace scrolls. */
+        /* Workspace: settings rail (left) · page (centre) · Add rail (right).
+           Body is a flex column so the navbar never scrolls away; the pane and
+           both rails scroll on their own. */
         html, body { height: 100%; }
         body { margin: 0; display: flex; flex-direction: column; overflow: hidden; }
         #root { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
         #carinoNav { flex-shrink: 0; }
-        #resumeActions { flex-wrap: nowrap; }
+        .vitae-ws { flex: 1 1 auto; min-height: 0; }
+        .vitae-ws .ws-rail { min-height: 0; }
+        .vitae-rail .field { min-width: 0; }
+        .vitae-rail .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .vitae-rail input[type="range"] { width: 100%; accent-color: var(--accent); }
+        .vitae-rail .hint { margin: 2px 0 0 23px; font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.45; }
+        .vitae-pane { position: relative; }
+        .vitae-pane .ws-toggle { position: sticky; top: 0; z-index: 30; margin-bottom: 12px; background: var(--bg); }
+        /* The page is drawn at its real size (210mm and so on) and zoomed to fit
+           the pane, so a phone shows the whole sheet instead of a corner of it.
+           Print resets the zoom. */
+        .vitae-doc { display: flex; flex-direction: column; align-items: center; gap: 2rem; padding: 12px 16px 80px; width: max-content; min-width: 100%; }
+        .vitae-add {
+            width: 64px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 14px;
+            padding: 16px 0; background: var(--bg-card); border-left: 1px solid var(--border); overflow-y: auto;
+        }
+        .vitae-add .add-lbl { font-family: var(--mono); font-size: var(--fs-micro); font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+        .vitae-tool {
+            width: 40px; height: 40px; flex: none; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background: var(--bg-elev); border: 1px solid var(--border); border-radius: 6px; color: var(--text-sec); transition: 0.15s;
+        }
+        .vitae-tool:hover, .vitae-tool.active { background: var(--accent); border-color: var(--accent); color: #050505; }
+        .vitae-tool.round { width: 32px; height: 32px; border-radius: 50%; margin-top: auto; }
+        .vitae-pane .short-hero { padding-top: clamp(16px, 6vh, 56px); }
+        .vitae-pane .short-hero .gold { color: var(--accent); }
+        .vitae-pane .sh-input { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+        .vitae-pane .sh-input .dropzone { width: 100%; }
+        @media (max-width: 640px) {
+            .vitae-add { width: 48px; gap: 10px; }
+            .vitae-tool { width: 34px; height: 34px; }
+            .vitae-doc { padding: 8px 8px 64px; }
+        }
         @media print {
             #carinoNav { display: none !important; }
             body { display: block; overflow: visible; }
@@ -188,10 +215,30 @@
     </style>
 </head>
 <body>
+    <!-- Navbar controls. carino-navbar.js moves this node into the bar; app.js
+         wires the buttons by id. Every output sits in the one Export menu. -->
+    <div data-carino-actions id="vitaeActions" class="no-print">
+        <div class="cs-menu">
+            <button type="button" class="cs-btn" id="exportMenuBtn" aria-haspopup="true" aria-expanded="false"><span data-i18n>Export</span> <span class="cs-caret">▾</span></button>
+            <div class="cs-menu-panel" role="menu" aria-labelledby="exportMenuBtn" hidden>
+                <button type="button" class="cs-menu-item" role="menuitem" id="exportTxtBtn"><span data-i18n>Plain text</span> <span class="cs-menu-note">.txt</span></button>
+                <button type="button" class="cs-menu-item" role="menuitem" id="copyLinkBtn"><span data-i18n>Copy link</span></button>
+                <div class="cs-menu-div"></div>
+                <button type="button" class="cs-menu-item" role="menuitem" id="exportJsonBtn"><span data-i18n>Save a copy</span> <span class="cs-menu-note">.json</span></button>
+                <button type="button" class="cs-menu-item" role="menuitem" id="importJsonBtn"><span data-i18n>Open a saved copy…</span></button>
+                <div class="cs-menu-div"></div>
+                <button type="button" class="cs-menu-item danger" role="menuitem" id="startOverBtn"><span data-i18n>Start over</span></button>
+            </div>
+        </div>
+        <button type="button" class="cs-btn primary" id="printBtn" data-priority="1"><span data-i18n>Print PDF</span></button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+
     <div id="root" role="main"></div>
 
     <script src="app.js"></script>
       <script src="carino-navbar.js" data-app="Vitae" data-repo="Vitae" defer></script>
+      <script src="carino-ui.js" defer></script>
       <script src="carino-lang.js" defer></script>
       <script src="i18n.js" defer></script>
 </body>
