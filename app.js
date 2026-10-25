@@ -996,10 +996,69 @@ function App() {
   }, h("label", {
     htmlFor: id
   }, label), control);
+  // The section types, shared by the Add strip (desktop) and the Add block
+  // at the top of the settings drawer (phones, where the strip is hidden).
+  const ADD_TOOLS = [{
+    id: 'header',
+    label: 'Head',
+    icon: Icons.ModHeader
+  }, {
+    id: 'text',
+    label: 'Text',
+    icon: Icons.ModText
+  }, {
+    id: 'list',
+    label: 'List',
+    icon: Icons.ModList
+  }, {
+    id: 'tags',
+    label: 'Skills',
+    icon: Icons.ModTags
+  }, {
+    id: 'languages',
+    label: 'Langs',
+    icon: Icons.ModLang
+  }, {
+    id: 'contact',
+    label: 'Info',
+    icon: Icons.ModContact
+  }, {
+    id: 'grid',
+    label: 'Grid',
+    icon: Icons.ModGrid
+  }, {
+    id: 'references',
+    label: 'Refs',
+    icon: Icons.ModRefs
+  }, {
+    id: 'disclaimer',
+    label: 'Disc',
+    icon: Icons.ModDisclaimer
+  }];
+  // On a phone the drawer covers the page: close it after adding, so the new
+  // section is in view.
+  const addFromDrawer = type => {
+    addSection(type);
+    if (wsRef.current && wsRef.current.classList.contains('drawer-open')) {
+      const tgl = document.querySelector('[data-ws-toggle]');
+      if (tgl) tgl.click();
+    }
+  };
   const rail = h("aside", {
     className: "ws-rail vitae-rail no-print",
     "aria-label": tr("Page settings")
+  }, started && h("div", {
+    className: "vitae-rail-add"
   }, h("div", {
+    className: "t-label"
+  }, tr("Add")), h("div", {
+    className: "vitae-rail-tools"
+  }, ADD_TOOLS.map(tool => h("button", {
+    key: tool.id,
+    type: "button",
+    className: "btn btn-ghost vitae-rail-tool",
+    onClick: () => addFromDrawer(tool.id)
+  }, h(tool.icon, null), h("span", null, tr(tool.label)))))), h("div", {
     className: "t-label"
   }, tr("Page settings")), field("cfgPaper", tr("Paper size"), h("select", {
     id: "cfgPaper",
@@ -1075,7 +1134,17 @@ function App() {
     className: "ws-rail-foot"
   }, h("p", {
     className: "privacy-line"
-  }, tr(PRIVACY))));
+  }, tr(PRIVACY)), h("p", {
+    className: "vitae-rail-links"
+  }, h("a", {
+    href: "https://github.com/MiguelCarino/Vitae",
+    target: "_blank",
+    rel: "noopener"
+  }, "GitHub"), " · ", h("a", {
+    href: "https://www.linkedin.com/in/miguelcarino94/",
+    target: "_blank",
+    rel: "noopener"
+  }, "LinkedIn"))));
   const pickFile = () => document.getElementById('importFile').click();
   const hero = h("div", {
     className: "short-hero"
@@ -1129,43 +1198,7 @@ function App() {
     "aria-label": tr("Add")
   }, h("div", {
     className: "add-lbl"
-  }, tr("Add")), [{
-    id: 'header',
-    label: 'Head',
-    icon: Icons.ModHeader
-  }, {
-    id: 'text',
-    label: 'Text',
-    icon: Icons.ModText
-  }, {
-    id: 'list',
-    label: 'List',
-    icon: Icons.ModList
-  }, {
-    id: 'tags',
-    label: 'Skills',
-    icon: Icons.ModTags
-  }, {
-    id: 'languages',
-    label: 'Langs',
-    icon: Icons.ModLang
-  }, {
-    id: 'contact',
-    label: 'Info',
-    icon: Icons.ModContact
-  }, {
-    id: 'grid',
-    label: 'Grid',
-    icon: Icons.ModGrid
-  }, {
-    id: 'references',
-    label: 'Refs',
-    icon: Icons.ModRefs
-  }, {
-    id: 'disclaimer',
-    label: 'Disc',
-    icon: Icons.ModDisclaimer
-  }].map(tool => h("button", {
+  }, tr("Add")), ADD_TOOLS.map(tool => h("button", {
     key: tool.id,
     type: "button",
     onClick: () => addSection(tool.id),

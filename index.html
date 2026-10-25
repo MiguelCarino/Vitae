@@ -202,9 +202,20 @@
         .vitae-pane .short-hero .gold { color: var(--accent); }
         .vitae-pane .sh-input { display: flex; flex-direction: column; gap: 12px; align-items: center; }
         .vitae-pane .sh-input .dropzone { width: 100%; }
+        /* Phones: the Add strip would take width from the page, so the tools
+           move to the top of the settings drawer and the page zooms larger. */
+        .vitae-rail-add, .vitae-rail-links { display: none; }
+        .vitae-rail-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .vitae-rail-tool { justify-content: flex-start; gap: 8px; padding: 8px 10px; min-width: 0; }
+        .vitae-rail-tool svg { width: 16px; height: 16px; flex: none; }
+        .vitae-rail-tool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .vitae-rail-links { margin: 8px 0 0; font-size: var(--fs-sm); color: var(--text-muted); }
+        .vitae-rail-links a { color: var(--text-sec); }
+        .vitae-rail-links a:hover { color: var(--accent); }
         @media (max-width: 640px) {
-            .vitae-add { width: 48px; gap: 10px; }
-            .vitae-tool { width: 34px; height: 34px; }
+            .vitae-add { display: none; }
+            .vitae-rail-add { display: flex; flex-direction: column; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+            .vitae-rail-links { display: block; }
             .vitae-doc { padding: 8px 8px 64px; }
         }
         @media print {
