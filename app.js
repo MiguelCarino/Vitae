@@ -908,37 +908,39 @@ function App() {
     if (activePage >= newPages.length) setActivePage(newPages.length - 1);
   };
   const addSection = type => {
+    // Starter text for a new block is written in the editor's language at the
+    // moment it is added; from then on it is the user's content and stays put.
     const defaults = {
       header: {
         data: {
-          name: "Name",
-          title: "Title",
+          name: tr("Name"),
+          title: tr("Job Title"),
           border: true
         }
       },
       text: {
-        content: "Content..."
+        content: tr("Content...")
       },
       list: {
         items: [{
-          title: "Title",
-          subtitle: "Date",
-          desc: "Description"
+          title: tr("Title"),
+          subtitle: tr("Date"),
+          desc: tr("Description")
         }]
       },
       languages: {
         items: [{
-          title: "Language",
-          subtitle: "Level"
+          title: tr("Language"),
+          subtitle: tr("Level")
         }]
       },
       tags: {
-        items: ["Skill"]
+        items: [tr("Skill")]
       },
       grid: {
         items: [{
-          title: "Project",
-          desc: "Details"
+          title: tr("Project"),
+          desc: tr("Details")
         }]
       },
       contact: {
@@ -949,19 +951,19 @@ function App() {
       },
       references: {
         items: [{
-          name: "Ref Name",
-          role: "Role / Company",
-          contact: "Contact Info"
+          name: tr("Ref Name"),
+          role: tr("Role / Company"),
+          contact: tr("Contact Info")
         }]
       },
       disclaimer: {
-        content: "Disclaimer text here..."
+        content: tr("Disclaimer text here...")
       }
     };
     const newSec = {
       id: Date.now(),
       type,
-      title: type === 'contact' || type === 'disclaimer' || type === 'header' ? '' : "Título",
+      title: type === 'contact' || type === 'disclaimer' || type === 'header' ? '' : tr("Title"),
       col: 'col-full',
       ...defaults[type]
     };
@@ -1069,9 +1071,9 @@ function App() {
     value: "a4"
   }, "A4"), h("option", {
     value: "letter"
-  }, "Letter"), h("option", {
+  }, tr("Letter")), h("option", {
     value: "legal"
-  }, "Legal"))), h("div", {
+  }, tr("Legal")))), h("div", {
     className: "field"
   }, h("label", null, tr("Accent colour")), h("div", {
     className: "color-grid"
@@ -1397,7 +1399,7 @@ function App() {
   }, "\xD7"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSection(pIdx, sIdx, 'items', [...sec.items, {
       icon: 'mail',
-      text: 'Info'
+      text: tr("Info")
     }]),
     className: "no-print opacity-30 hover:opacity-100 font-bold"
   }, "+")), sec.type === 'disclaimer' && /*#__PURE__*/React.createElement("div", {
@@ -1479,9 +1481,9 @@ function App() {
     className: "absolute -left-6 top-0 text-red-300 opacity-0 group-hover/item:opacity-100 no-print"
   }, "\xD7"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSection(pIdx, sIdx, 'items', [...sec.items, {
-      title: 'New',
-      subtitle: 'Date',
-      desc: 'Desc'
+      title: tr("New"),
+      subtitle: tr("Date"),
+      desc: tr("Desc")
     }]),
     className: "text-[10px] font-bold opacity-30 hover:opacity-100 uppercase mt-1 no-print self-start"
   }, tr("+ Item"))), sec.type === 'languages' && /*#__PURE__*/React.createElement("div", {
@@ -1521,8 +1523,8 @@ function App() {
     className: "absolute -left-6 top-1 text-red-300 opacity-0 group-hover/item:opacity-100 no-print"
   }, "\xD7"))), /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSection(pIdx, sIdx, 'items', [...sec.items, {
-      title: 'New',
-      subtitle: 'Level'
+      title: tr("New"),
+      subtitle: tr("Level")
     }]),
     className: "text-[10px] font-bold opacity-30 hover:opacity-100 uppercase mt-1 no-print self-start"
   }, tr("+ Language"))), sec.type === 'tags' && /*#__PURE__*/React.createElement("div", {
@@ -1545,7 +1547,7 @@ function App() {
     },
     className: "absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3 h-3 flex items-center justify-center text-[8px] opacity-0 group-hover/tag:opacity-100 no-print"
   }, "\xD7"))), /*#__PURE__*/React.createElement("button", {
-    onClick: () => updateSection(pIdx, sIdx, 'items', [...sec.items, "New"]),
+    onClick: () => updateSection(pIdx, sIdx, 'items', [...sec.items, tr("New")]),
     className: "px-2 py-1 rounded border border-dashed opacity-50 hover:opacity-100 no-print"
   }, "+")), sec.type === 'grid' && /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-3"
@@ -1585,8 +1587,8 @@ function App() {
     className: "absolute top-1 right-1 text-red-300 opacity-0 group-hover/item:opacity-100 no-print text-xs"
   }, "\xD7"), "                                                            ")), "                                                        ", /*#__PURE__*/React.createElement("button", {
     onClick: () => updateSection(pIdx, sIdx, 'items', [...sec.items, {
-      title: 'New',
-      desc: 'Desc'
+      title: tr("New"),
+      desc: tr("Desc")
     }]),
     className: "flex items-center justify-center border-2 border-dashed rounded opacity-30 hover:opacity-100 min-h-[50px] no-print text-xs font-bold"
   }, "+"), "                                                    "), "                                                                                            ")), "                                    "), "                                "), "                            ")), "                        ", /*#__PURE__*/React.createElement("button", {
