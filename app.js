@@ -740,6 +740,28 @@ const downloadJson = (filename, data) => {
 };
 const h = React.createElement;
 
+// Left and right sections that sit next to each other become two independent
+// stacks, so a short Education never waits for a long Skills on the other side
+// (a shared grid row did, and pushed everything below it down the page).
+// Full-width sections still cut across both. ATS mode keeps one column in order.
+const columnBands = (sections, ats, render) => {
+  const nodes = sections.map(render);
+  if (ats) return nodes;
+  const out = [];
+  let band = null;
+  sections.forEach((sec, i) => {
+    if (sec.col === 'col-left' || sec.col === 'col-right') {
+      if (!band) out.push(band = { key: 'band-' + sec.id, left: [], right: [] });
+      band[sec.col === 'col-left' ? 'left' : 'right'].push(nodes[i]);
+    } else {
+      band = null;
+      out.push(nodes[i]);
+    }
+  });
+  return out.map(x => x.left ? h('div', { key: x.key, className: 'col-band' },
+    h('div', { className: 'col-stack' }, x.left), h('div', { className: 'col-stack' }, x.right)) : x);
+};
+
 function App() {
   // A link with a résumé in it opens straight onto the page; a bare URL
   // opens on the empty state (the short hero).
@@ -1311,7 +1333,7 @@ function App() {
     "aria-label": tr("Delete page")
   }, /*#__PURE__*/React.createElement(Icons.Trash, null)), /*#__PURE__*/React.createElement("div", {
     className: `resume-grid ${atsMode ? 'ats' : ''}`
-  }, page.sections.map((sec, sIdx) => /*#__PURE__*/React.createElement("div", {
+  }, columnBands(page.sections, atsMode, (sec, sIdx) => /*#__PURE__*/React.createElement("div", {
     key: sec.id,
     className: `relative group section-item section-${sec.type} ${atsMode ? 'col-full' : sec.col}`
   }, /*#__PURE__*/React.createElement(SectionControl, {
