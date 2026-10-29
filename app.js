@@ -1173,8 +1173,14 @@ function App() {
   const hero = h("div", {
     className: "short-hero"
   }, h("img", {
-    className: "mark",
+    className: "mark mk-gold",
     src: "logo.svg",
+    alt: "",
+    width: 48,
+    height: 48
+  }), h("img", {
+    className: "mark mk-color",
+    src: "logo-color.svg",
     alt: "",
     width: 48,
     height: 48
