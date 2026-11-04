@@ -270,6 +270,26 @@
     </style>
 </head>
 <body>
+<!-- The navbar shows this in its About tab, under "Disclaimer:". -->
+<div data-carino-about hidden>
+  <p data-i18n>Your résumé lives in this link and this browser; it is never uploaded.</p>
+</div>
+
+<!-- Key words: the navbar shows them, translated, under its Language tab. -->
+<ul data-carino-words hidden>
+  <li>Export</li>
+  <li>Plain text</li>
+  <li>Print PDF</li>
+  <li>Copy link</li>
+  <li>Save a copy</li>
+</ul>
+
+<!-- Bundled libraries: the navbar lists them in its About window, Licence tab. -->
+<ul data-carino-libs data-href="https://github.com/MiguelCarino/Vitae/blob/main/vendor/README.md" hidden>
+  <li data-licence="MIT">React</li>
+  <li data-licence="MIT">React DOM</li>
+</ul>
+
     <!-- Navbar controls. carino-navbar.js moves this node into the bar; app.js
          wires the buttons by id. Every output sits in the one Export menu. -->
     <div data-carino-actions id="vitaeActions" class="no-print">

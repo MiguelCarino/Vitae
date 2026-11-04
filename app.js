@@ -1154,21 +1154,7 @@ function App() {
     onChange: () => setAtsMode(!atsMode)
   }), h("span", null, tr("One column (ATS)"))), h("p", {
     className: "hint"
-  }, tr("Stack every section into one column so applicant tracking systems read the PDF in order"))), h("div", {
-    className: "ws-rail-foot"
-  }, h("p", {
-    className: "privacy-line"
-  }, tr(PRIVACY)), h("p", {
-    className: "vitae-rail-links"
-  }, h("a", {
-    href: "https://github.com/MiguelCarino/Vitae",
-    target: "_blank",
-    rel: "noopener"
-  }, "GitHub"), " · ", h("a", {
-    href: "https://www.linkedin.com/in/miguelcarino94/",
-    target: "_blank",
-    rel: "noopener"
-  }, "LinkedIn"))));
+  }, tr("Stack every section into one column so applicant tracking systems read the PDF in order"))));
   const pickFile = () => document.getElementById('importFile').click();
   const hero = h("div", {
     className: "short-hero"
@@ -1219,9 +1205,7 @@ function App() {
     type: "button",
     className: "chip-tag",
     onClick: () => begin(samplePages(), DEFAULT_CONFIG)
-  }, tr("Open the example"))), h("p", {
-    className: "privacy-line"
-  }, tr(PRIVACY)));
+  }, tr("Open the example"))));
   const addRail = h("div", {
     className: "vitae-add no-print",
     role: "toolbar",
