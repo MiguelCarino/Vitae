@@ -62,7 +62,14 @@
             --module-gap: 15px; /* vertical space between stacked sections */
             --item-gap: 0px;    /* internal space inside a section */
         }
-        
+
+        /* Download PDF (carino-pdf.js): html2canvas finds each line's baseline
+           in THIS page, from a 1x1 picture set beside a sample of text.
+           tailwind.css (img { display: block }) dropped that picture onto a
+           line of its own, and every line of the PDF came out about half an
+           em too low, cut in half at the foot of a page. */
+        img[src^="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP"] { display: inline !important; }
+
         /* PAGE DIMENSIONS */
         .page-container {
             background: white;
@@ -329,8 +336,10 @@
     <input type="file" id="importFile" accept=".json,application/json" hidden>
 
     <!-- Print preview: Print PDF opens the résumé here as it will print; only
-         this dialog's Print PDF button prints (the frame). The layout is the
-         fleet's .rpv (carino-ui.css 18b); app.js fills it. -->
+         this dialog's Print button prints (the frame), and Download saves it
+         as the file the File PDF | HTML switch picks (carino-pdf.js; app.js
+         puts the switch in just above the name). The layout is the fleet's
+         .rpv (carino-ui.css 18b); app.js fills it. -->
     <div class="rpv-scrim no-print" id="rpOverlay" hidden>
         <div class="rpv" role="dialog" aria-modal="true" aria-labelledby="rpTitle">
             <aside class="rpv-side">
@@ -341,7 +350,8 @@
                 <p class="rpv-status" id="rpStatus" role="status" aria-live="polite"></p>
                 <p class="rpv-name" id="rpName"></p>
                 <div class="rpv-actions">
-                    <button type="button" class="btn btn-primary" id="rpPrint" disabled><span data-i18n>Print PDF</span></button>
+                    <button type="button" class="btn" id="rpPrint" disabled><span data-i18n>Print</span></button>
+                    <button type="button" class="btn btn-primary" id="rpDownload" disabled>Download PDF</button>
                 </div>
             </aside>
             <div class="rpv-stage" id="rpStage"><iframe id="rpFrame" class="rpv-frame" title="Résumé preview"></iframe></div>
@@ -356,5 +366,6 @@
       <script src="carino-ui.js" defer></script>
       <script src="carino-lang.js" defer></script>
       <script src="i18n.js" defer></script>
+      <script src="carino-pdf.js" defer></script>
 </body>
 </html>

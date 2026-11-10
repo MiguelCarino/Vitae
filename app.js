@@ -776,11 +776,17 @@ const columnBands = (sections, ats, render) => {
 // so its dashed lines and page count are where the print breaks. A section
 // taller than a whole sheet is cut where the browser chooses, which the
 // preview cannot know, so the count then reads "About N pages".
+// Download saves the same résumé as a file, PDF or HTML (the File switch,
+// carino-pdf.js). The file is the frame's document with every same-origin
+// stylesheet written into it (rpFileHtml), so the PDF is laid out by the
+// very print rules and @page size that shape window.print(), forced breaks
+// before added pages and printed backgrounds included, and the HTML file
+// opens on its own.
 const PAPER_H_PX = { a4: 1122.5, letter: 1056, legal: 1344 };
 const RP_GUTTER = 16;
 // Tailwind's print variants, used only if a stylesheet cannot be read (file://).
 const RP_TW_PRINT = '.print\\:m-0{margin:0}.print\\:block{display:block}.print\\:overflow-visible{overflow:visible}.print\\:bg-white{background-color:#fff}.print\\:p-0{padding:0}';
-const rp = { seq: 0, loadTimer: 0, open: false, back: null, paper: 'a4', title: '', pages: 0, approx: false, titleBefore: null };
+const rp = { seq: 0, loadTimer: 0, open: false, back: null, paper: 'a4', title: '', pages: 0, approx: false, titleBefore: null, file: '', ready: false, busy: false, format: null };
 const rpEl = id => document.getElementById(id);
 const rpEsc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const rpPages = n => rp.approx && n > 1 ? tr("About {n} pages").replace('{n}', n) : n === 1 ? tr("1 page") : tr("{n} pages").replace('{n}', n);
@@ -822,7 +828,12 @@ const rpBuildHtml = () => {
   const nameEl = src.querySelector('.section-header h1');
   const name = ((nameEl && nameEl.textContent) || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
   rp.title = name ? name + ' - ' + tr("Résumé") : tr("Résumé");
-  const head = [...document.head.querySelectorAll('link[rel="stylesheet"], style')].map(n => n.tagName === 'LINK' ? `<link rel="stylesheet" href="${rpEsc(n.href)}">` : `<style>${n.textContent}</style>`).join('\n');
+  const nodes = [...document.head.querySelectorAll('link[rel="stylesheet"], style')];
+  const head = nodes.map(n => n.tagName === 'LINK' ? `<link rel="stylesheet" href="${rpEsc(n.href)}">` : `<style>${n.textContent}</style>`).join('\n');
+  const inlined = nodes.map(n => {
+    const css = n.tagName === 'LINK' ? rpSheetText(n.sheet) : null;
+    return css !== null ? `<style>${css}</style>` : n.tagName === 'LINK' ? `<link rel="stylesheet" href="${rpEsc(n.href)}">` : `<style>${n.textContent}</style>`;
+  }).join('\n');
   const root = document.documentElement;
   const attrs = ['lang', 'data-theme', 'data-carino-theme'].filter(a => root.hasAttribute(a)).map(a => ` ${a}="${rpEsc(root.getAttribute(a))}"`).join('');
   const base = document.baseURI.split('#')[0];
@@ -838,9 +849,28 @@ ${rpPrintRules()}
   .rp-break span { position: absolute; right: 0; top: -15px; padding: 1px 6px; border-radius: 3px 3px 0 0; background: #9aa0a8; font: 10px/12px 'IBM Plex Mono', monospace; color: #fff; }
 }
 @media print { .rp-break { display: none !important; } }`;
-  return `<!DOCTYPE html><html${attrs}><head><meta charset="UTF-8"><base href="${rpEsc(base)}" target="_blank"><title>${rpEsc(rp.title)}</title>
-${head}
+  const page = h => `<!DOCTYPE html><html${attrs}><head><meta charset="UTF-8"><base href="${rpEsc(base)}" target="_blank"><title>${rpEsc(rp.title)}</title>
+${h}
 <style>${preview}</style></head><body>${doc.outerHTML}</body></html>`;
+  rp.file = page(inlined);
+  return page(head);
+};
+// A same-origin stylesheet as text, its url()s made absolute (they pointed
+// next to the stylesheet), or null when it cannot be read (file://).
+const rpSheetText = sheet => {
+  try {
+    if (!sheet || !sheet.href) return null;
+    const href = sheet.href;
+    return [...sheet.cssRules].map(r => r.cssText).join('\n').replace(/url\(\s*(["']?)(?!data:|#|[a-z][a-z0-9+.-]*:)([^"')]+)\1\s*\)/gi, (all, q, u) => {
+      try {
+        return `url("${new URL(u, href).href}")`;
+      } catch (e) {
+        return all;
+      }
+    }).replace(/<\/style/gi, '<\\/style');
+  } catch (e) {
+    return null;
+  }
 };
 // The ✕ carries its name in attributes, which data-i18n does not reach.
 const rpLabels = () => {
@@ -848,6 +878,44 @@ const rpLabels = () => {
   if (!x) return;
   x.title = tr("Close");
   x.setAttribute('aria-label', x.title);
+  if (rp.format) rp.format.relabel();
+  rpLabelFile();
+};
+// File PDF | HTML (carino-pdf.js, deferred: made on the first open), just
+// above the file name; the name and the Download label follow it.
+const rpFormatSwitch = () => {
+  if (rp.format || !window.CarinoPdf) return rp.format;
+  rp.format = window.CarinoPdf.formatSwitch({ onChange: rpLabelFile });
+  const name = rpEl('rpName');
+  if (name) name.parentNode.insertBefore(rp.format.el, name);
+  return rp.format;
+};
+const rpFileFormat = () => rp.format ? rp.format.get() : 'pdf';
+const rpLabelFile = () => {
+  const f = rpFileFormat(),
+    btn = rpEl('rpDownload'),
+    name = rpEl('rpName');
+  if (btn) btn.textContent = window.CarinoPdf ? window.CarinoPdf.label(f) : tr(f === 'html' ? "Download HTML" : "Download PDF");
+  if (name) name.textContent = !rp.title ? '' : window.CarinoPdf ? window.CarinoPdf.fileName(rp.title, f) : rp.title + '.' + f;
+};
+const rpDownload = async () => {
+  const btn = rpEl('rpDownload');
+  if (!btn || btn.disabled || rp.busy || !rp.ready || !rp.file || !window.CarinoPdf) return;
+  const f = rpFileFormat();
+  rp.busy = true;
+  btn.disabled = true;
+  if (f === 'pdf') rpStatus(tr("Creating the PDF…"));
+  let r;
+  try {
+    r = await window.CarinoPdf.download({ html: rp.file, name: rp.title, format: f, title: rp.title, fonts: 'fonts/carino-fonts.css', producer: 'Carino Vitae' });
+  } catch (e) {
+    r = { ok: false, error: String(e) };
+  }
+  rp.busy = false;
+  btn.disabled = !rp.ready;
+  if (!rp.open) return;
+  if (r && r.ok) rpStatus(rp.pages ? rpPages(rp.pages) : '');
+  else rpStatus(tr(f === 'pdf' ? "Could not create the PDF." : "Could not create the HTML file."));
 };
 const rpStatus = text => {
   const el = rpEl('rpStatus');
@@ -868,15 +936,19 @@ const rpFit = () => {
 const rpRefresh = async () => {
   const seq = ++rp.seq;
   const frame = rpEl('rpFrame'),
-    btn = rpEl('rpPrint');
+    btn = rpEl('rpPrint'),
+    dl = rpEl('rpDownload');
   btn.disabled = true;
+  if (dl) dl.disabled = true;
+  rp.ready = false;
+  rp.file = '';
   rp.pages = 0;
   rp.approx = false;
-  rpStatus(tr("Preparing the preview…"));
+  if (!rp.busy) rpStatus(tr("Preparing the preview…"));
   frame.title = tr("Résumé preview");
   const html = rpBuildHtml();
-  rpEl('rpName').textContent = rp.title + '.pdf';
-  if (!html) return rpStatus('');
+  rpLabelFile();
+  if (!html) return rp.busy ? undefined : rpStatus('');
   clearTimeout(rp.loadTimer);
   await new Promise(done => {
     // Each refresh clears only its own handler and timer, so a superseded
@@ -940,8 +1012,10 @@ const rpRefresh = async () => {
     console.warn('Print preview: could not measure the pages.', e);
   }
   rpFit();
-  rpStatus(rp.pages ? rpPages(rp.pages) : '');
+  if (!rp.busy) rpStatus(rp.pages ? rpPages(rp.pages) : '');
   btn.disabled = false;
+  rp.ready = true;
+  if (dl) dl.disabled = rp.busy || !window.CarinoPdf;
 };
 const rpRestoreTitle = () => {
   if (rp.titleBefore !== null) document.title = rp.titleBefore;
@@ -968,6 +1042,7 @@ const openPrintPreview = paper => {
   rp.back = document.activeElement;
   rp.paper = paper || 'a4';
   rp.open = true;
+  rpFormatSwitch();
   rpLabels();
   ov.hidden = false;
   document.addEventListener('keydown', rpKey);
@@ -978,6 +1053,8 @@ const closePrintPreview = () => {
   if (!rp.open) return;
   rp.seq++;
   rp.open = false;
+  rp.ready = false;
+  rp.file = '';
   clearTimeout(rp.loadTimer);
   const ov = rpEl('rpOverlay'),
     frame = rpEl('rpFrame');
@@ -1009,6 +1086,7 @@ const closePrintPreview = () => {
   };
   wire('rpClose', closePrintPreview);
   wire('rpPrint', rpPrint);
+  wire('rpDownload', rpDownload);
   const ov = rpEl('rpOverlay');
   if (ov) ov.addEventListener('click', e => {
     if (e.target === ov) closePrintPreview();
