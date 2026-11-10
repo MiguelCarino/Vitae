@@ -11,7 +11,7 @@ Build a résumé by editing it directly on the page (sections, columns, font and
 - Opens on a sample résumé that you type over. Add sections for a header, free text, lists (experience, education), skill tags, languages, contact details, a project grid, references and a disclaimer.
 - Put each section full width, in the left column or in the right column, and move it up or down. Add more pages when one is not enough.
 - Choose A4, Letter or Legal paper, one of 12 accent colours, one of four fonts, and set the text size and margins. A dark version of the résumé is one click away.
-- Print PDF opens the browser's print dialog with the paper size already set. TXT downloads a plain-text copy.
+- Print PDF first shows a print preview of the résumé exactly as it will print (sheets at paper size, a dashed line where each sheet ends); its own Print PDF button opens the browser's print dialog with the paper size already set, and Close prints nothing. TXT downloads a plain-text copy.
 - ATS stacks every section into one column, so applicant tracking systems read the PDF in order.
 - Interface in English, Spanish, Portuguese (Brazil), Japanese and Russian.
 

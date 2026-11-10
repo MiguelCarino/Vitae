@@ -762,6 +762,272 @@ const columnBands = (sections, ats, render) => {
     h('div', { className: 'col-stack' }, x.left), h('div', { className: 'col-stack' }, x.right)) : x);
 };
 
+// Print preview. Print PDF first shows the résumé as it will print, in a frame
+// inside a dialog, and only the dialog's own Print PDF button prints (the
+// frame, as Topo's report dialog does). Close drops it. The frame holds a copy
+// of the rendered pages with the editor controls taken out, under the page's
+// own stylesheets, so the @media print rules (and the @page size) that shaped
+// window.print() shape this print too. On screen the frame applies those same
+// print rules, so what it shows is what prints: a sheet at paper width on grey,
+// a dashed line where each sheet ends, scaled down (not reflowed) on a phone.
+// Print moves a section (break-inside: avoid) that would straddle a sheet
+// edge to the next sheet, and when it opens a two-column band the whole band
+// goes with it. The preview makes the same moves (on screen only, as margins),
+// so its dashed lines and page count are where the print breaks. A section
+// taller than a whole sheet is cut where the browser chooses, which the
+// preview cannot know, so the count then reads "About N pages".
+const PAPER_H_PX = { a4: 1122.5, letter: 1056, legal: 1344 };
+const RP_GUTTER = 16;
+// Tailwind's print variants, used only if a stylesheet cannot be read (file://).
+const RP_TW_PRINT = '.print\\:m-0{margin:0}.print\\:block{display:block}.print\\:overflow-visible{overflow:visible}.print\\:bg-white{background-color:#fff}.print\\:p-0{padding:0}';
+const rp = { seq: 0, loadTimer: 0, open: false, back: null, paper: 'a4', title: '', pages: 0, approx: false, titleBefore: null };
+const rpEl = id => document.getElementById(id);
+const rpEsc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const rpPages = n => rp.approx && n > 1 ? tr("About {n} pages").replace('{n}', n) : n === 1 ? tr("1 page") : tr("{n} pages").replace('{n}', n);
+
+// The page's @media print rules, as plain rules, so the frame shows on screen
+// what it prints. @page is left out: it means nothing on screen.
+const rpPrintRules = () => {
+  let css = '',
+    unread = false;
+  const walk = rules => {
+    for (const r of rules) {
+      if (window.CSSMediaRule && r instanceof CSSMediaRule) {
+        const m = r.media.mediaText;
+        if (/\bprint\b/.test(m) && !/\bscreen\b/.test(m)) {
+          for (const c of r.cssRules) if (!(window.CSSPageRule && c instanceof CSSPageRule)) css += c.cssText + '\n';
+        }
+      }
+    }
+  };
+  for (const sheet of document.styleSheets) {
+    try {
+      walk(sheet.cssRules);
+    } catch (e) {
+      unread = true;
+    }
+  }
+  return unread ? RP_TW_PRINT + '\n' + css : css;
+};
+const rpBuildHtml = () => {
+  const src = document.querySelector('.vitae-doc');
+  if (!src) return null;
+  const doc = src.cloneNode(true);
+  doc.style.zoom = '';
+  // Editor controls: hidden in print, so not in the preview either. The
+  // active-page bar sits outside the sheet and never reached the paper.
+  doc.querySelectorAll('.no-print, .page-delete-btn, .menu-bridge, .toast').forEach(n => n.remove());
+  doc.querySelectorAll(':scope > div > :not(.page-container)').forEach(n => n.remove());
+  doc.querySelectorAll('[contenteditable]').forEach(n => n.removeAttribute('contenteditable'));
+  const nameEl = src.querySelector('.section-header h1');
+  const name = ((nameEl && nameEl.textContent) || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+  rp.title = name ? name + ' - ' + tr("Résumé") : tr("Résumé");
+  const head = [...document.head.querySelectorAll('link[rel="stylesheet"], style')].map(n => n.tagName === 'LINK' ? `<link rel="stylesheet" href="${rpEsc(n.href)}">` : `<style>${n.textContent}</style>`).join('\n');
+  const root = document.documentElement;
+  const attrs = ['lang', 'data-theme', 'data-carino-theme'].filter(a => root.hasAttribute(a)).map(a => ` ${a}="${rpEsc(root.getAttribute(a))}"`).join('');
+  const base = document.baseURI.split('#')[0];
+  const preview = `@media screen {
+${rpPrintRules()}
+  html, body { background: #d6d8dc !important; height: auto !important; overflow: visible !important; }
+  body { margin: 0 !important; padding: 0 !important; }
+  .vitae-doc { padding: ${RP_GUTTER}px !important; gap: 24px !important; }
+  .page-container { box-shadow: 0 1px 6px rgba(0,0,0,.28) !important; min-height: var(--rp-h, 0px) !important; }
+  .page-container, .page-container * { transition: none !important; }
+  .rp-push { margin-top: var(--rp-push) !important; }
+  .rp-break { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px dashed #9aa0a8; pointer-events: none; z-index: 5; }
+  .rp-break span { position: absolute; right: 0; top: -15px; padding: 1px 6px; border-radius: 3px 3px 0 0; background: #9aa0a8; font: 10px/12px 'IBM Plex Mono', monospace; color: #fff; }
+}
+@media print { .rp-break { display: none !important; } }`;
+  return `<!DOCTYPE html><html${attrs}><head><meta charset="UTF-8"><base href="${rpEsc(base)}" target="_blank"><title>${rpEsc(rp.title)}</title>
+${head}
+<style>${preview}</style></head><body>${doc.outerHTML}</body></html>`;
+};
+// The ✕ carries its name in attributes, which data-i18n does not reach.
+const rpLabels = () => {
+  const x = rpEl('rpClose');
+  if (!x) return;
+  x.title = tr("Close");
+  x.setAttribute('aria-label', x.title);
+};
+const rpStatus = text => {
+  const el = rpEl('rpStatus');
+  if (el) el.textContent = text || '';
+};
+const rpFit = () => {
+  const frame = rpEl('rpFrame'),
+    stage = rpEl('rpStage');
+  if (!frame || !stage) return;
+  Object.assign(frame.style, { width: '', height: '', transform: '' });
+  // The sheet, the grey either side and room for the frame's scroll bar.
+  const pagePx = Math.ceil((PAPER_PX[rp.paper] || 816) + 2 * RP_GUTTER + 16);
+  const w = stage.clientWidth;
+  if (!w || w >= pagePx) return;
+  const k = w / pagePx;
+  Object.assign(frame.style, { width: `${pagePx}px`, height: `${Math.round(stage.clientHeight / k)}px`, transform: `scale(${k})`, transformOrigin: '0 0' });
+};
+const rpRefresh = async () => {
+  const seq = ++rp.seq;
+  const frame = rpEl('rpFrame'),
+    btn = rpEl('rpPrint');
+  btn.disabled = true;
+  rp.pages = 0;
+  rp.approx = false;
+  rpStatus(tr("Preparing the preview…"));
+  frame.title = tr("Résumé preview");
+  const html = rpBuildHtml();
+  rpEl('rpName').textContent = rp.title + '.pdf';
+  if (!html) return rpStatus('');
+  clearTimeout(rp.loadTimer);
+  await new Promise(done => {
+    // Each refresh clears only its own handler and timer, so a superseded
+    // refresh cannot unhook the load wait of the one that replaced it.
+    const shown = () => {
+      if (frame.onload === shown) frame.onload = null;
+      clearTimeout(rp.loadTimer);
+      done();
+    };
+    frame.onload = shown;
+    rp.loadTimer = setTimeout(shown, 5000); // a frame that never says it loaded
+    frame.srcdoc = html;
+  });
+  if (seq !== rp.seq) return;
+  try {
+    const d = frame.contentDocument;
+    // Focus moves into the frame (a click on the sheet, or after printing),
+    // and its keys do not reach the top document: Esc still closes there.
+    d.addEventListener('keydown', rpKey);
+    if (d.fonts) await d.fonts.ready;
+    if (seq !== rp.seq) return;
+    const ph = PAPER_H_PX[rp.paper] || PAPER_H_PX.a4;
+    let total = 0;
+    d.querySelectorAll('.vitae-doc .page-container').forEach(pc => {
+      pc.style.removeProperty('--rp-h');
+      const top = () => pc.getBoundingClientRect().top;
+      // Top-down: each section that crosses a sheet edge without starting
+      // that sheet moves to the next one. Re-measure after every move.
+      for (const sec of pc.querySelectorAll('.section-item')) {
+        if (sec.parentElement.closest('.section-item')) continue;
+        const r = sec.getBoundingClientRect();
+        if (r.height > ph) rp.approx = true;
+        const y = r.top - top(),
+          b = r.bottom - top();
+        const edge = (Math.floor(y / ph) + 1) * ph;
+        if (b <= edge + 0.5 || y - (edge - ph) < 1) continue;
+        const stack = sec.parentElement;
+        const band = stack.classList.contains('col-stack') && stack.firstElementChild === sec ? stack.closest('.col-band') : null;
+        const mover = band || sec;
+        const before = parseFloat(getComputedStyle(mover).marginTop) || 0;
+        mover.style.setProperty('--rp-push', `${before + edge - y}px`);
+        mover.classList.add('rp-push');
+      }
+      // Print drops the page's bottom padding (index.html), so the sheets
+      // run to the last content.
+      const n = Math.max(1, Math.ceil((pc.getBoundingClientRect().height - 1) / ph));
+      pc.style.setProperty('--rp-h', `${n * ph}px`);
+      for (let k = 1; k < n; k++) {
+        const line = d.createElement('div');
+        line.className = 'rp-break';
+        line.style.top = `${k * ph}px`;
+        const tag = d.createElement('span');
+        tag.textContent = tr("Page {n}").replace('{n}', total + k + 1);
+        line.append(tag);
+        pc.append(line);
+      }
+      total += n;
+    });
+    rp.pages = total;
+  } catch (e) {
+    console.warn('Print preview: could not measure the pages.', e);
+  }
+  rpFit();
+  rpStatus(rp.pages ? rpPages(rp.pages) : '');
+  btn.disabled = false;
+};
+const rpRestoreTitle = () => {
+  if (rp.titleBefore !== null) document.title = rp.titleBefore;
+  rp.titleBefore = null;
+};
+const rpPrint = () => {
+  const frame = rpEl('rpFrame');
+  const w = frame && frame.contentWindow;
+  if (!w || rpEl('rpPrint').disabled) return;
+  // Save as PDF names the file after the title; some browsers take the
+  // top page's, so it carries the résumé's name until the dialog closes.
+  if (rp.titleBefore === null) rp.titleBefore = document.title;
+  document.title = rp.title;
+  w.addEventListener('afterprint', rpRestoreTitle, { once: true });
+  w.focus();
+  w.print();
+};
+const rpKey = e => {
+  if (e.key === 'Escape') closePrintPreview();
+};
+const openPrintPreview = paper => {
+  const ov = rpEl('rpOverlay');
+  if (!ov) return window.print(); // a page without the dialog prints straight away
+  rp.back = document.activeElement;
+  rp.paper = paper || 'a4';
+  rp.open = true;
+  rpLabels();
+  ov.hidden = false;
+  document.addEventListener('keydown', rpKey);
+  rpEl('rpClose').focus();
+  return rpRefresh();
+};
+const closePrintPreview = () => {
+  if (!rp.open) return;
+  rp.seq++;
+  rp.open = false;
+  clearTimeout(rp.loadTimer);
+  const ov = rpEl('rpOverlay'),
+    frame = rpEl('rpFrame');
+  if (ov) ov.hidden = true;
+  if (frame) {
+    frame.onload = null;
+    frame.removeAttribute('srcdoc');
+    Object.assign(frame.style, { width: '', height: '', transform: '' });
+  }
+  rpRestoreTitle();
+  document.removeEventListener('keydown', rpKey);
+  try {
+    // Back to the opener. On a phone Print PDF sits in the navbar's closed
+    // "more" menu and cannot take focus, so try that menu's button next;
+    // focus must never stay in the hidden frame.
+    const tries = [rp.back, rpEl('printBtn'), document.querySelector('#carinoNav .cn-more:not([hidden])')];
+    for (const el of tries) {
+      if (!el || el === document.body || !el.isConnected) continue;
+      el.focus();
+      if (document.activeElement === el) break;
+    }
+    if (frame && document.activeElement === frame) frame.blur();
+  } catch (e) {}
+};
+(() => {
+  const wire = (id, fn) => {
+    const el = rpEl(id);
+    if (el) el.addEventListener('click', fn);
+  };
+  wire('rpClose', closePrintPreview);
+  wire('rpPrint', rpPrint);
+  const ov = rpEl('rpOverlay');
+  if (ov) ov.addEventListener('click', e => {
+    if (e.target === ov) closePrintPreview();
+  });
+  window.addEventListener('resize', () => {
+    if (rp.open) rpFit();
+  });
+  // The navbar stays usable over the dialog: a new language or theme rebuilds
+  // the preview, so the frame never shows (or prints) a stale page.
+  const again = () => {
+    rpLabels();
+    if (rp.open) rpRefresh();
+  };
+  window.addEventListener('carino:langchange', again);
+  window.addEventListener('carino:themechange', again);
+})();
+window.openPrintPreview = openPrintPreview;
+window.closePrintPreview = closePrintPreview;
+
 function App() {
   // A link with a résumé in it opens straight onto the page; a bare URL
   // opens on the empty state (the short hero).
@@ -855,7 +1121,7 @@ function App() {
       return () => el && el.removeEventListener('click', fn);
     };
     const offs = [
-      wire('printBtn', () => window.print()),
+      wire('printBtn', () => openPrintPreview(live.current.config.paperSize)),
       wire('exportTxtBtn', () => downloadText('resume.txt', resumeToText(live.current.pages))),
       wire('exportJsonBtn', () => downloadJson('resume.json', { app: 'vitae', version: 1, ...live.current })),
       wire('importJsonBtn', () => document.getElementById('importFile').click()),
@@ -883,6 +1149,9 @@ function App() {
       if (!f) return;
       e.preventDefault();
       setDrag(false);
+      // The open print preview shows the résumé it was built from; a file
+      // dropped on it must not swap the page out from under the dialog.
+      if (rp.open) return;
       openFile(f);
     };
     window.addEventListener('dragover', over);

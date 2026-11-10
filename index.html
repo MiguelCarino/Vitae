@@ -117,22 +117,32 @@
             #app-ui, .no-print, .menu-bridge, .page-delete-btn,
             .ws-rail, .ws-scrim, .ws-toggle, .vitae-add, .toast { display: none !important; }
             .ws, .ws-pane { display: block; min-height: 0; padding: 0; overflow: visible; background: white; }
-            .vitae-doc { zoom: 1 !important; padding: 0; gap: 0; }
+            /* !important: the workspace rules further down (.vitae-doc padding
+               and gap) come later in the file and would otherwise win, adding
+               blank trailing sheets to the print. */
+            .vitae-doc { zoom: 1 !important; padding: 0 !important; gap: 0 !important; }
             
             .page-container {
                 box-shadow: none; 
                 margin: 0; 
                 padding: var(--page-margin) !important;
+                /* No bottom padding: on its own it can spill onto one more,
+                   blank sheet. The rest of the last sheet is blank anyway. */
+                padding-bottom: 0 !important;
                 border: none; 
                 page-break-after: always;
                 /* Do NOT reassert the on-screen paper height here. .size-* is
                    exactly one sheet, and @page margin is 0, so any rounding
                    over that emits a trailing blank page. page-break-after
                    already does the pagination. */
-                min-height: 0;
+                min-height: 0 !important;
                 height: auto;
             }
             .page-container:last-child { page-break-after: auto; }
+            /* Each page sits in its own wrapper, so it is always :last-child
+               and the break-after above never fires: break before every
+               page after the first instead, so an added page starts a sheet. */
+            .vitae-doc > div + div { break-before: page; }
             
             /* Ensure icons align perfectly in print */
             .icon-wrapper { margin-right: 6px !important; display: inline-block; vertical-align: middle; }
@@ -141,6 +151,11 @@
                content also lands in the PDF text layer, which breaks ATS
                parsing as well as looking like stray grey text. */
             .editable:empty:before { content: none !important; }
+
+            /* Print the page's own colours (Dark page, accent fills), as
+               the print preview shows them. Browsers drop backgrounds by
+               default, which left white text on white paper. */
+            .page-container, .page-container * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
 
         /* Editable Areas */
@@ -267,6 +282,10 @@
         :root[data-carino-theme="color"] .ui-panel.text-white { background: var(--bg-card); color: var(--text); box-shadow: var(--ct-shadow-2); }
         :root[data-carino-theme="color"] .ui-panel .text-red-300 { color: var(--err); }
         :root[data-carino-theme="color"] .ui-panel .hover\:bg-red-600:hover { background: var(--err); color: var(--ct-on-accent); }
+        /* Print preview (.rpv, carino-ui.css 18b): on a phone rpFit scales the
+           frame with a transform, which keeps its unscaled layout box; the
+           frame scrolls itself, so the stage must not scroll into that box. */
+        .rpv-stage { overflow: hidden; }
     </style>
 </head>
 <body>
@@ -308,6 +327,26 @@
         <button type="button" class="cs-btn primary" id="printBtn" data-priority="1"><span data-i18n>Print PDF</span></button>
     </div>
     <input type="file" id="importFile" accept=".json,application/json" hidden>
+
+    <!-- Print preview: Print PDF opens the résumé here as it will print; only
+         this dialog's Print PDF button prints (the frame). The layout is the
+         fleet's .rpv (carino-ui.css 18b); app.js fills it. -->
+    <div class="rpv-scrim no-print" id="rpOverlay" hidden>
+        <div class="rpv" role="dialog" aria-modal="true" aria-labelledby="rpTitle">
+            <aside class="rpv-side">
+                <div class="rpv-head">
+                    <h2 class="rpv-title" id="rpTitle" data-i18n>Print preview</h2>
+                    <button type="button" class="modal-x rpv-x" id="rpClose" title="Close" aria-label="Close">✕</button>
+                </div>
+                <p class="rpv-status" id="rpStatus" role="status" aria-live="polite"></p>
+                <p class="rpv-name" id="rpName"></p>
+                <div class="rpv-actions">
+                    <button type="button" class="btn btn-primary" id="rpPrint" disabled><span data-i18n>Print PDF</span></button>
+                </div>
+            </aside>
+            <div class="rpv-stage" id="rpStage"><iframe id="rpFrame" class="rpv-frame" title="Résumé preview"></iframe></div>
+        </div>
+    </div>
 
     <div id="root" role="main"></div>
 
